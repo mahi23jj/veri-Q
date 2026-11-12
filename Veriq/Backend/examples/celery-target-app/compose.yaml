@@ -1,0 +1,87 @@
+# VeriQ reference integration for a Celery target application.
+#
+# DEVELOPMENT / TEST ONLY. Never point this at a production broker, database or
+# payment provider, and never put real secrets in this file.
+#
+# Copy .env.example to .env and fill it in, then from this directory:
+#   docker compose up --build
+#
+# Inspect which queues each worker consumes:
+#   docker compose logs worker | grep -E "celery@|queues"
+#   docker compose logs veriq-worker | grep -E "celery@|queues"
+
+name: veriq-celery-target
+
+services:
+  redis:
+    image: redis:7-alpine
+    # No host port: the broker is only reachable inside this compose network.
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  # The target application's own database. The sample tasks do not query it, but
+  # both workers receive TARGET_DATABASE_URL exactly as a real app would. Point
+  # developers at a dedicated test database, never production data.
+  target-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${TARGET_POSTGRES_DB:-targetapp}
+      POSTGRES_USER: ${TARGET_POSTGRES_USER:-targetapp}
+      POSTGRES_PASSWORD: ${TARGET_POSTGRES_PASSWORD:?Set TARGET_POSTGRES_PASSWORD in .env}
+    volumes:
+      - target_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # Normal traffic. Consumes the "normal" queue only.
+  worker:
+    build:
+      context: ../..
+      dockerfile: examples/celery-target-app/Dockerfile
+    command: ["celery", "-A", "app.celery_app", "worker", "-Q", "${CELERY_NORMAL_QUEUE:-normal}", "--loglevel=INFO", "--concurrency=2"]
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_NORMAL_QUEUE: ${CELERY_NORMAL_QUEUE:-normal}
+      VERIQ_QUEUE: ${VERIQ_QUEUE:-veriq.test}
+      TARGET_DATABASE_URL: postgresql://${TARGET_POSTGRES_USER:-targetapp}:${TARGET_POSTGRES_PASSWORD}@target-db:5432/${TARGET_POSTGRES_DB:-targetapp}
+    depends_on:
+      redis:
+        condition: service_healthy
+      target-db:
+        condition: service_healthy
+
+  # Isolated experiment execution environment. Same image, same task code, but
+  # it consumes only the VeriQ test queue with concurrency 1 so the runner can
+  # later attribute and control one task at a time. It deliberately has no
+  # Docker socket, no host ports, and no access to the "normal" queue.
+  veriq-worker:
+    build:
+      context: ../..
+      dockerfile: examples/celery-target-app/Dockerfile
+    command: ["celery", "-A", "app.celery_app", "worker", "-Q", "${VERIQ_QUEUE:-veriq.test}", "--loglevel=INFO", "--concurrency=1", "--hostname=veriq@%h"]
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_NORMAL_QUEUE: ${CELERY_NORMAL_QUEUE:-normal}
+      VERIQ_QUEUE: ${VERIQ_QUEUE:-veriq.test}
+      TARGET_DATABASE_URL: postgresql://${TARGET_POSTGRES_USER:-targetapp}:${TARGET_POSTGRES_PASSWORD}@target-db:5432/${TARGET_POSTGRES_DB:-targetapp}
+      VERIQ_API_URL: ${VERIQ_API_URL:?Set VERIQ_API_URL in .env}
+      VERIQ_API_KEY: ${VERIQ_API_KEY:?Set VERIQ_API_KEY in .env}
+    # Reach a VeriQ backend running on the developer's host (outside compose).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+      target-db:
+        condition: service_healthy
+
+volumes:
+  target_pgdata:
