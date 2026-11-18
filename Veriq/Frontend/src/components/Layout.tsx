@@ -1,35 +1,184 @@
 import React, { useState } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Boxes,
   FlaskConical,
-  History,
-  Settings,
-  HelpCircle,
   Menu,
   X,
   ShieldCheck,
-  Plus
+  Plus,
+  ListChecks,
+  Server,
+  Activity,
+  Terminal,
+  Settings,
+  ChevronRight,
 } from 'lucide-react';
+import { useApplication } from '../context/application-context';
+import { API_BASE_URL } from '../api/client';
 
-interface LayoutProps {
-  children: React.ReactNode;
-  onOpenNewExperiment?: () => void;
-}
-
-export const Layout: React.FC<LayoutProps> = ({ children, onOpenNewExperiment }) => {
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { applications, selectedApplication, selectApplication, loading } = useApplication();
 
-  const navigation = [
-    { name: 'Overview', href: '/', icon: LayoutDashboard },
+  const workspaceNavigation = [
+    { name: 'Overview', href: '/', icon: LayoutDashboard, exact: true },
     { name: 'Applications', href: '/applications', icon: Boxes },
-    { name: 'Experiments', href: '/experiments', icon: FlaskConical },
-    { name: 'Experiment History', href: '/history', icon: History },
+    { name: 'Integration', href: '/integration', icon: Terminal },
     { name: 'Settings', href: '/settings', icon: Settings },
-    { name: 'Help & Docs', href: '/help', icon: HelpCircle }
   ];
+
+  const applicationNavigation = selectedApplication
+    ? [
+        {
+          name: 'Application overview',
+          href: `/applications/${selectedApplication.id}`,
+          icon: LayoutDashboard,
+          exact: true,
+        },
+        { name: 'Tasks', href: `/applications/${selectedApplication.id}/tasks`, icon: ListChecks },
+        { name: 'Workers', href: `/applications/${selectedApplication.id}/workers`, icon: Server },
+        { name: 'Executions', href: `/applications/${selectedApplication.id}/executions`, icon: Activity },
+        {
+          name: 'Experiments',
+          href: `/applications/${selectedApplication.id}/experiments`,
+          icon: FlaskConical,
+        },
+      ]
+    : [];
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? location.pathname === href : location.pathname === href || location.pathname.startsWith(`${href}/`);
+
+  const handleApplicationChange = (applicationId: string) => {
+    if (!applicationId) return;
+    selectApplication(applicationId);
+    navigate(`/applications/${applicationId}`);
+    setMobileMenuOpen(false);
+  };
+
+  const renderLink = (item: {
+    name: string;
+    href: string;
+    icon: typeof LayoutDashboard;
+    exact?: boolean;
+  }) => {
+    const Icon = item.icon;
+    return (
+      <NavLink
+        key={item.href}
+        to={item.href}
+        onClick={() => setMobileMenuOpen(false)}
+        className={
+          isActive(item.href, item.exact)
+            ? 'flex items-center gap-3 px-3 py-2 text-sm rounded-lg bg-[#879B83]/18 text-[#262c24] font-semibold border-l-3 border-[#879B83] pl-[10px] transition-all'
+            : 'flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-[#61655b] hover:bg-[#EFEEE7] hover:text-[#343832] font-normal transition-all'
+        }
+      >
+        <Icon className="w-4 h-4 shrink-0 text-[#777A72]" />
+        <span className="truncate">{item.name}</span>
+      </NavLink>
+    );
+  };
+
+  const brand = (
+    <>
+      <div className="w-9 h-9 rounded-lg bg-[#879B83] flex items-center justify-center text-white shadow-2xs">
+        <ShieldCheck className="w-5 h-5" />
+      </div>
+      <div>
+        <div className="font-serif font-bold text-lg text-[#343832] leading-tight tracking-tight">VeriQ</div>
+        <div className="text-[11px] text-[#777A72] tracking-wide font-medium mt-0.5">
+          Background Job Reliability
+        </div>
+      </div>
+    </>
+  );
+
+  const applicationSelector = (
+    <div className="px-3 pt-3">
+      <label
+        className="block text-[10px] font-semibold uppercase tracking-wider text-[#777A72] px-1 mb-1.5"
+        htmlFor="active-application"
+      >
+        Active application
+      </label>
+      {applications.length > 0 ? (
+        <div className="relative">
+          <select
+            id="active-application"
+            value={selectedApplication?.id ?? ''}
+            onChange={(event) => handleApplicationChange(event.target.value)}
+            className="w-full appearance-none pl-3 pr-8 py-2 text-xs font-medium bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg text-[#343832] focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+            disabled={loading}
+          >
+            {applications.map((app) => (
+              <option key={app.id} value={app.id}>
+                {app.name} ({app.environment})
+              </option>
+            ))}
+          </select>
+          <ChevronRight className="w-3.5 h-3.5 text-[#777A72] absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none" />
+        </div>
+      ) : (
+        <Link
+          to="/applications"
+          onClick={() => setMobileMenuOpen(false)}
+          className="block px-3 py-2 text-[11px] text-[#777A72] bg-[#FAF8F3] border border-dashed border-[#E5E1D7] rounded-lg hover:border-[#D8C8AE] transition-colors"
+        >
+          {loading ? 'Loading applications…' : 'No application yet — register one'}
+        </Link>
+      )}
+      {selectedApplication && (
+        <div className="mt-1.5 flex items-center gap-1.5 px-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#879B83]" />
+          <span className="text-[10px] text-[#777A72] font-mono uppercase tracking-wide">
+            {selectedApplication.environment}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+
+  const navigation = (
+    <>
+      <div className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#777A72] px-4">
+        Workspace
+      </div>
+      <nav className="px-3 space-y-1">{workspaceNavigation.map(renderLink)}</nav>
+
+      {selectedApplication ? (
+        <>
+          <div className="px-4 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#777A72]">
+            Application
+          </div>
+          <nav className="px-3 space-y-1">{applicationNavigation.map(renderLink)}</nav>
+        </>
+      ) : (
+        <div className="mx-3 mt-4 p-3 rounded-lg bg-[#FAF8F3] border border-dashed border-[#E5E1D7] text-[11px] text-[#777A72] leading-relaxed">
+          Register a target application to see tasks, workers, executions and experiments in its
+          context.
+        </div>
+      )}
+    </>
+  );
+
+  const footer = (
+    <div className="p-4 border-t border-[#E5E1D7] bg-[#FAF8F3]">
+      <div className="mb-2 px-2 py-1.5 rounded bg-[#EFEEE7]/80 text-[10px] text-[#777A72] flex items-center justify-between gap-2">
+        <span className="font-mono truncate" title={API_BASE_URL}>
+          API: {API_BASE_URL.replace(/^https?:\/\//, '')}
+        </span>
+        <span className="inline-block w-2 h-2 rounded-full bg-[#879B83] shrink-0" />
+      </div>
+      <div className="px-2 text-[10px] text-[#777A72] leading-relaxed">
+        Dashboard reads are currently unauthenticated. SDK ingestion uses an application API key.
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#F7F5EF] text-[#343832]">
@@ -40,8 +189,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, onOpenNewExperiment })
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <span className="font-serif font-bold text-base tracking-tight text-[#343832]">QueueProof</span>
-            <span className="block text-[10px] text-[#777A72] uppercase tracking-wider font-mono">Reliability Harness</span>
+            <span className="font-serif font-bold text-base tracking-tight text-[#343832]">VeriQ</span>
+            <span className="block text-[10px] text-[#777A72] uppercase tracking-wider font-mono">
+              Reliability
+            </span>
           </div>
         </div>
         <button
@@ -56,17 +207,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, onOpenNewExperiment })
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 bg-[#343832]/30 backdrop-blur-xs flex">
-          <div className="w-72 bg-[#FDFCFA] h-full p-5 flex flex-col shadow-xl border-r border-[#E5E1D7]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#E5E1D7] mb-4">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#879B83] flex items-center justify-center text-white">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="font-serif font-bold text-base text-[#343832]">QueueProof</span>
-                  <span className="block text-[10px] text-[#777A72] font-mono">Job Reliability</span>
-                </div>
-              </div>
+          <div className="w-72 bg-[#FDFCFA] h-full flex flex-col shadow-xl border-r border-[#E5E1D7] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 pb-4 border-b border-[#E5E1D7]">
+              <div className="flex items-center space-x-2.5">{brand}</div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1.5 text-[#777A72] hover:text-[#343832] rounded-md"
@@ -74,122 +217,50 @@ export const Layout: React.FC<LayoutProps> = ({ children, onOpenNewExperiment })
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="space-y-1 flex-1">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-[#879B83]/15 text-[#343832] font-semibold border-l-3 border-[#879B83]'
-                        : 'text-[#777A72] hover:bg-[#EFEEE7] hover:text-[#343832]'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#5f745b]' : 'text-[#777A72]'}`} />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-            <div className="pt-4 border-t border-[#E5E1D7]">
-              <div className="px-3 py-2 bg-[#EFEEE7]/80 rounded-lg text-xs text-[#777A72]">
-                <p className="font-medium text-[#343832]">Test Sandbox Mode</p>
-                <p className="text-[11px] mt-0.5">Isolated mock worker harness</p>
-              </div>
-            </div>
+            {applicationSelector}
+            <div className="flex-1 py-2">{navigation}</div>
+            {footer}
           </div>
           <div className="flex-1" onClick={() => setMobileMenuOpen(false)} />
         </div>
       )}
 
-      {/* Desktop Sidebar (approx 250px) */}
+      {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-[256px] shrink-0 min-h-screen bg-[#FDFCFA] border-r border-[#E5E1D7] select-none">
-        {/* Brand Area */}
-        <div className="p-6 pb-5 border-b border-[#E5E1D7]">
+        <div className="p-6 pb-4 border-b border-[#E5E1D7]">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-lg bg-[#879B83] group-hover:bg-[#778b73] transition-colors flex items-center justify-center text-white shadow-2xs">
+            <div className="w-9 h-9 rounded-lg bg-[#879B83] group-hover:bg-[#778b73] transition-colors flex items-center justify-center text-white">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <div className="font-serif font-bold text-lg text-[#343832] leading-tight tracking-tight">QueueProof</div>
-              <div className="text-[11px] text-[#777A72] tracking-wide font-medium mt-0.5">Background Job Reliability</div>
+              <div className="font-serif font-bold text-lg text-[#343832] leading-tight tracking-tight">
+                VeriQ
+              </div>
+              <div className="text-[11px] text-[#777A72] tracking-wide font-medium mt-0.5">
+                Background Job Reliability
+              </div>
             </div>
           </Link>
         </div>
 
-        {/* Quick Action */}
-        <div className="px-4 pt-4 pb-2">
-          {onOpenNewExperiment ? (
-            <button
-              onClick={onOpenNewExperiment}
-              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4" />
-              New Experiment
-            </button>
-          ) : (
-            <Link
-              to="/experiments?action=create"
-              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4" />
-              New Experiment
-            </Link>
-          )}
+        <div className="px-3 pt-4 pb-1">
+          <Link
+            to="/applications?action=register"
+            className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4" />
+            Register Application
+          </Link>
         </div>
 
-        {/* Main Navigation */}
-        <nav className="flex-1 px-3 py-3 space-y-1">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href));
-            return (
-              <NavLink
-                key={item.name}
-                to={item.href}
-                className={({ isActive: exactActive }) => {
-                  const active = item.href === '/' ? exactActive : isActive;
-                  return `flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-150 ${
-                    active
-                      ? 'bg-[#879B83]/18 text-[#262c24] font-semibold border-l-3 border-[#879B83] pl-[10px]'
-                      : 'text-[#61655b] hover:bg-[#EFEEE7] hover:text-[#343832] font-normal'
-                  }`;
-                }}
-              >
-                <Icon className="w-4 h-4 shrink-0 text-[#777A72]" />
-                <span>{item.name}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
+        {applicationSelector}
 
-        {/* Workspace Summary & Visual-only Profile Area */}
-        <div className="p-4 border-t border-[#E5E1D7] bg-[#FAF8F3]">
-          <div className="mb-3 px-2 py-1.5 rounded bg-[#EFEEE7]/80 text-[11px] text-[#777A72] flex items-center justify-between">
-            <span className="font-mono">Cluster: Staging-US</span>
-            <span className="inline-block w-2 h-2 rounded-full bg-[#879B83] animate-pulse" />
-          </div>
-
-          <div className="flex items-center gap-3 pt-1">
-            <div className="w-8 h-8 rounded-full bg-[#D8C8AE] flex items-center justify-center text-xs font-medium text-[#463f35] font-serif">
-              EM
-            </div>
-            <div className="truncate">
-              <div className="text-xs font-medium text-[#343832] truncate">Elena Miller</div>
-              <div className="text-[10px] text-[#777A72] truncate">Staff Reliability Engineer</div>
-            </div>
-          </div>
-        </div>
+        <div className="flex-1 py-2 overflow-y-auto">{navigation}</div>
+        {footer}
       </aside>
 
       {/* Main Content Viewport */}
-      <main className="flex-1 min-w-0 flex flex-col overflow-y-auto">
-        {children}
-      </main>
+      <main className="flex-1 min-w-0 flex flex-col overflow-y-auto">{children}</main>
     </div>
   );
 };

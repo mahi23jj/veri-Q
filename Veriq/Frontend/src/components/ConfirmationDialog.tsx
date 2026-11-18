@@ -8,7 +8,8 @@ interface ConfirmationDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   isDestructive?: boolean;
-  onConfirm: () => void;
+  isBusy?: boolean;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -19,6 +20,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   isDestructive = true,
+  isBusy = false,
   onConfirm,
   onCancel
 }) => {
@@ -42,19 +44,21 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         <div className="mt-6 flex items-center justify-end gap-2.5">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-xs font-medium text-[#777A72] hover:text-[#343832] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+            disabled={isBusy}
+            className="px-4 py-2 text-xs font-medium text-[#777A72] hover:text-[#343832] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] disabled:opacity-50 transition-colors"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg text-white transition-all ${
+            disabled={isBusy}
+            className={`px-4 py-2 text-xs font-semibold rounded-lg text-white disabled:opacity-60 transition-all ${
               isDestructive
                 ? 'bg-[#A46F70] hover:bg-[#8f5d5e]'
                 : 'bg-[#879B83] hover:bg-[#788c74]'
             }`}
           >
-            {confirmLabel}
+            {isBusy ? 'Working…' : confirmLabel}
           </button>
         </div>
       </div>

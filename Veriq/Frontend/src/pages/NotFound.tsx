@@ -11,7 +11,7 @@ export const NotFound: React.FC = () => {
         </div>
         <h1 className="font-serif font-bold text-xl text-[#343832]">Page Not Found</h1>
         <p className="text-xs text-[#777A72] mt-2 mb-6 leading-relaxed">
-          The requested route does not exist in the QueueProof harness.
+          The requested route does not exist in the VeriQ dashboard.
         </p>
         <Link
           to="/"

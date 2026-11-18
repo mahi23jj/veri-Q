@@ -1,312 +1,374 @@
-import React, { useState } from 'react';
-import { Layout } from '../components/Layout';
-import { INITIAL_APPLICATIONS, INITIAL_EXPERIMENTS, INITIAL_RUNS } from '../mockData';
-import type { Application } from '../types';
-import { RegisterAppModal } from '../components/RegisterAppModal';
-import { ConfirmationDialog } from '../components/ConfirmationDialog';
-import { VerdictBadge } from '../components/VerdictBadge';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   Boxes,
   Plus,
-  Server,
-  FolderGit2,
-  Calendar,
-  Layers,
-  Edit2,
   Trash2,
-  CheckCircle2,
-  AlertCircle,
+  KeyRound,
   ExternalLink,
-  ChevronRight
+  Calendar,
+  ChevronRight,
+  Server,
+  Activity,
+  Terminal,
+  FlaskConical,
+  ListChecks,
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { Layout } from '../components/Layout';
+import { RegisterAppModal } from '../components/RegisterAppModal';
+import { ApiKeyModal } from '../components/ApiKeyModal';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { EmptyState, ErrorState, LoadingState, PageHeader, Pill } from '../components/ui';
+import { useApplication } from '../context/application-context';
+import { api } from '../api/client';
+import type { TargetApplicationWithKey } from '../api/types';
+import { formatDate, shortId } from '../lib/format';
 
 export const Applications: React.FC = () => {
-  const [apps, setApps] = useState<Application[]>(INITIAL_APPLICATIONS);
-  const [selectedApp, setSelectedApp] = useState<Application | null>(INITIAL_APPLICATIONS[0]);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const {
+    applications,
+    loading,
+    error,
+    selectedApplication,
+    selectApplication,
+    reload,
+  } = useApplication();
+
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [editingApp, setEditingApp] = useState<Application | null>(null);
-  const [deletingApp, setDeletingApp] = useState<Application | null>(null);
+  const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
+  const [rotating, setRotating] = useState<{ id: string; name: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [apiKeyState, setApiKeyState] = useState<{
+    applicationName: string;
+    apiKey: string;
+    rotated: boolean;
+  } | null>(null);
 
-  const handleRegisterOrUpdate = (appData: Omit<Application, 'id' | 'experimentCount' | 'createdAt' | 'status'>) => {
-    if (editingApp) {
-      const updated = apps.map(a => a.id === editingApp.id ? { ...a, ...appData } : a);
-      setApps(updated);
-      if (selectedApp?.id === editingApp.id) {
-        setSelectedApp({ ...selectedApp, ...appData });
-      }
-      toast.success('Application updated successfully');
-      setEditingApp(null);
-    } else {
-      const newApp: Application = {
-        id: `app-${Date.now()}`,
-        ...appData,
-        experimentCount: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-        status: 'healthy'
-      };
-      setApps([...apps, newApp]);
-      setSelectedApp(newApp);
-      toast.success('Application registered successfully');
+  useEffect(() => {
+    if (searchParams.get('action') === 'register') {
+      setIsRegisterOpen(true);
+    }
+  }, [searchParams]);
+
+  const closeRegister = () => {
+    setIsRegisterOpen(false);
+    if (searchParams.get('action')) {
+      setSearchParams({}, { replace: true });
     }
   };
 
-  const confirmDelete = () => {
-    if (!deletingApp) return;
-    const remaining = apps.filter(a => a.id !== deletingApp.id);
-    setApps(remaining);
-    if (selectedApp?.id === deletingApp.id) {
-      setSelectedApp(remaining[0] || null);
-    }
-    toast.info(`Application "${deletingApp.name}" removed`);
-    setDeletingApp(null);
+  const handleCreated = async (created: TargetApplicationWithKey) => {
+    closeRegister();
+    await reload();
+    selectApplication(created.id);
+    setApiKeyState({
+      applicationName: created.name,
+      apiKey: created.api_key,
+      rotated: false,
+    });
+    toast.success(`Application "${created.name}" registered`);
   };
 
-  // Associated experiments and runs for selected app
-  const associatedExperiments = selectedApp
-    ? INITIAL_EXPERIMENTS.filter(e => e.applicationId === selectedApp.id)
-    : [];
-  const associatedRuns = selectedApp
-    ? INITIAL_RUNS.filter(r => r.applicationId === selectedApp.id)
-    : [];
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setBusy(true);
+    try {
+      await api.deleteApplication(deleting.id);
+      toast.info(`Application "${deleting.name}" removed`);
+      setDeleting(null);
+      await reload();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Could not delete application');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRotate = async () => {
+    if (!rotating) return;
+    setBusy(true);
+    try {
+      const rotated = await api.rotateApiKey(rotating.id);
+      setApiKeyState({
+        applicationName: rotated.name,
+        apiKey: rotated.api_key,
+        rotated: true,
+      });
+      setRotating(null);
+      toast.success('New API key issued — the previous key no longer works');
+      await reload();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Could not rotate API key');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Layout>
       <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E5E1D7]">
-          <div>
-            <h1 className="font-serif font-bold text-2xl md:text-3xl text-[#343832] tracking-tight">
-              Target Applications
-            </h1>
-            <p className="text-xs md:text-sm text-[#777A72] mt-1">
-              Registered background worker pools and microservices subject to reliability verification.
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setEditingApp(null);
-              setIsRegisterOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            Register Application
-          </button>
-        </div>
+        <PageHeader
+          title="Target Applications"
+          description="Register each Celery application you want VeriQ to observe. An application scopes its tasks, workers, executions and experiments."
+          actions={
+            <button
+              onClick={() => setIsRegisterOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              Register Application
+            </button>
+          }
+        />
 
-        {/* Master-Detail Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Applications List (5 cols) */}
-          <div className="lg:col-span-5 space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#777A72] px-1">
-              Registered Services ({apps.length})
-            </h2>
+        {error && <ErrorState message={error} onRetry={() => void reload()} />}
 
-            {apps.map((app) => {
-              const isSelected = selectedApp?.id === app.id;
-              return (
-                <div
-                  key={app.id}
-                  onClick={() => setSelectedApp(app)}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                    isSelected
-                      ? 'bg-[#FDFCFA] border-[#879B83] shadow-xs ring-1 ring-[#879B83]/30'
-                      : 'bg-[#FDFCFA] border-[#E5E1D7] hover:border-[#D8C8AE] hover:bg-[#FAF8F3]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-serif font-bold text-base text-[#343832]">{app.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#EFEEE7] text-[#52564e]">
-                          {app.framework}
+        {loading && applications.length === 0 ? (
+          <LoadingState label="Loading applications…" />
+        ) : applications.length === 0 ? (
+          <EmptyState
+            icon={<Boxes className="w-5 h-5" />}
+            title="No target applications yet"
+            description="Register your first Celery application to receive an API key. Then install the SDK and start a worker to discover tasks and executions."
+            action={
+              <button
+                onClick={() => setIsRegisterOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+              >
+                <Plus className="w-4 h-4" /> Register Application
+              </button>
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Applications list */}
+            <div className="lg:col-span-5 space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#777A72] px-1">
+                Registered Applications ({applications.length})
+              </h2>
+
+              {applications.map((app) => {
+                const isSelected = selectedApplication?.id === app.id;
+                return (
+                  <div
+                    key={app.id}
+                    onClick={() => selectApplication(app.id)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-[#FDFCFA] border-[#879B83] shadow-xs ring-1 ring-[#879B83]/30'
+                        : 'bg-[#FDFCFA] border-[#E5E1D7] hover:border-[#D8C8AE] hover:bg-[#FAF8F3]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="font-serif font-bold text-base text-[#343832] truncate">
+                          {app.name}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Pill tone="sage">{app.environment}</Pill>
+                          <Pill tone="muted" title={app.id}>
+                            {shortId(app.id, 10)}
+                          </Pill>
+                        </div>
+                      </div>
+                      <ChevronRight
+                        className={`w-4 h-4 mt-1 shrink-0 ${isSelected ? 'text-[#879B83]' : 'text-[#B3B5AC]'}`}
+                      />
+                    </div>
+
+                    <p className="text-xs text-[#777A72] mt-2.5 line-clamp-2 leading-relaxed">
+                      {app.description || 'No description provided.'}
+                    </p>
+
+                    <div className="mt-3 pt-3 border-t border-[#E5E1D7]/70 flex items-center justify-between text-[11px] text-[#777A72]">
+                      <span>Registered {formatDate(app.created_at)}</span>
+                      <span className="font-mono">{shortId(app.id, 8)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Detail */}
+            <div className="lg:col-span-7">
+              {selectedApplication ? (
+                <div className="bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-2xs overflow-hidden">
+                  <div className="p-6 border-b border-[#E5E1D7] bg-[#FAF8F3] flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h2 className="font-serif font-bold text-xl text-[#343832]">
+                          {selectedApplication.name}
+                        </h2>
+                        <Pill tone="sage">{selectedApplication.environment}</Pill>
+                      </div>
+                      <p className="text-xs text-[#777A72] mt-1">
+                        {selectedApplication.description || 'No description provided.'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => setRotating({ id: selectedApplication.id, name: selectedApplication.name })}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                        title="Rotate the SDK API key"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" /> Rotate key
+                      </button>
+                      <button
+                        onClick={() => setDeleting({ id: selectedApplication.id, name: selectedApplication.name })}
+                        className="p-2 text-[#A46F70] hover:text-[#733e3f] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#A46F70]/10 transition-colors"
+                        title="Delete application"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-6 border-b border-[#E5E1D7] space-y-3">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#777A72]">
+                      Registration details
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7]">
+                        <span className="text-[#777A72] block text-[11px]">Application ID</span>
+                        <span className="font-mono text-[#343832] mt-0.5 block break-all">
+                          {selectedApplication.id}
                         </span>
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#879B83]/15 text-[#3e563a] font-medium">
-                          {app.environment}
+                      </div>
+                      <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7]">
+                        <span className="text-[#777A72] block text-[11px] flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> Created
+                        </span>
+                        <span className="text-[#343832] mt-0.5 block">
+                          {formatDate(selectedApplication.created_at)}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7] sm:col-span-2">
+                        <span className="text-[#777A72] block text-[11px]">API key</span>
+                        <span className="text-[#343832] mt-0.5 block">
+                          Stored only as a SHA-256 hash. If you lost the plaintext key, rotate it to
+                          issue a new one.
                         </span>
                       </div>
                     </div>
-                    <span className="text-xs font-mono bg-[#FAF8F3] px-2 py-1 rounded border border-[#E5E1D7] text-[#777A72]">
-                      {app.experimentCount} exps
+                  </div>
+
+                  <div className="p-6 border-b border-[#E5E1D7]">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-3">
+                      Inspect this application
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {[
+                        {
+                          to: `/applications/${selectedApplication.id}`,
+                          icon: Server,
+                          title: 'Overview',
+                          description: 'Workers, tasks, recent executions',
+                        },
+                        {
+                          to: `/applications/${selectedApplication.id}/tasks`,
+                          icon: ListChecks,
+                          title: 'Tasks',
+                          description: 'Discovered Celery task catalog',
+                        },
+                        {
+                          to: `/applications/${selectedApplication.id}/workers`,
+                          icon: Server,
+                          title: 'Workers',
+                          description: 'Heartbeats, queues, registered tasks',
+                        },
+                        {
+                          to: `/applications/${selectedApplication.id}/executions`,
+                          icon: Activity,
+                          title: 'Executions',
+                          description: 'Attempt history and event timelines',
+                        },
+                        {
+                          to: `/applications/${selectedApplication.id}/experiments`,
+                          icon: FlaskConical,
+                          title: 'Experiments',
+                          description: 'Reliability experiment definitions',
+                        },
+                        {
+                          to: '/integration',
+                          icon: Terminal,
+                          title: 'SDK integration',
+                          description: 'Install, wire Celery, start workers',
+                        },
+                      ].map((item) => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="flex items-start gap-2.5 p-3 rounded-lg border border-[#E5E1D7] hover:border-[#D8C8AE] hover:bg-[#FAF8F3] transition-colors"
+                        >
+                          <item.icon className="w-3.5 h-3.5 text-[#8297AC] mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium text-[#343832]">{item.title}</div>
+                            <div className="text-[10px] text-[#777A72] mt-0.5">{item.description}</div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-6 flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      onClick={() => navigate(`/applications/${selectedApplication.id}`)}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+                    >
+                      Open application <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[11px] text-[#777A72]">
+                      Application context scopes every dashboard request.
                     </span>
                   </div>
-
-                  <p className="text-xs text-[#777A72] mt-2.5 line-clamp-2 leading-relaxed">
-                    {app.description}
-                  </p>
-
-                  <div className="mt-3 pt-3 border-t border-[#E5E1D7]/70 flex items-center justify-between text-[11px] text-[#777A72]">
-                    <span className="font-mono truncate max-w-[200px]">{app.importPath}</span>
-                    <span>Created {app.createdAt}</span>
-                  </div>
                 </div>
-              );
-            })}
+              ) : (
+                <EmptyState
+                  title="Select an application"
+                  description="Choose an application from the list to inspect its registration details."
+                />
+              )}
+            </div>
           </div>
-
-          {/* Application Detail View (7 cols) */}
-          <div className="lg:col-span-7">
-            {selectedApp ? (
-              <div className="bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-2xs overflow-hidden">
-                {/* Header */}
-                <div className="p-6 border-b border-[#E5E1D7] bg-[#FAF8F3] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <h2 className="font-serif font-bold text-xl text-[#343832]">{selectedApp.name}</h2>
-                      <span className="w-2 h-2 rounded-full bg-[#879B83]" title="Harness connected" />
-                    </div>
-                    <p className="text-xs text-[#777A72] mt-1">{selectedApp.description}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingApp(selectedApp);
-                        setIsRegisterOpen(true);
-                      }}
-                      className="p-2 text-[#777A72] hover:text-[#343832] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
-                      title="Edit application configuration"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeletingApp(selectedApp)}
-                      className="p-2 text-[#A46F70] hover:text-[#733e3f] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#A46F70]/10 transition-colors"
-                      title="Delete application"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Configuration Breakdown */}
-                <div className="p-6 border-b border-[#E5E1D7] space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#777A72]">
-                    Target Configuration
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7]">
-                      <span className="text-[#777A72] block text-[11px]">Worker Runtime Framework</span>
-                      <span className="font-mono font-medium text-[#343832] mt-0.5 block">{selectedApp.framework}</span>
-                    </div>
-
-                    <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7]">
-                      <span className="text-[#777A72] block text-[11px]">Assigned Environment</span>
-                      <span className="font-medium text-[#343832] mt-0.5 block uppercase tracking-wider">{selectedApp.environment}</span>
-                    </div>
-
-                    <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7] sm:col-span-2">
-                      <span className="text-[#777A72] block text-[11px]">Primary Task Import Hook</span>
-                      <span className="font-mono text-[#343832] mt-0.5 block break-all">{selectedApp.importPath}</span>
-                    </div>
-
-                    {selectedApp.defaultTask && (
-                      <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7] sm:col-span-2">
-                        <span className="text-[#777A72] block text-[11px]">Default Task Function</span>
-                        <span className="font-mono text-[#343832] mt-0.5 block">{selectedApp.defaultTask}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Associated Experiments */}
-                <div className="p-6 border-b border-[#E5E1D7]">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#777A72]">
-                      Associated Experiments ({associatedExperiments.length})
-                    </h3>
-                    <Link
-                      to={`/experiments?app=${selectedApp.id}`}
-                      className="text-xs text-[#5f745b] hover:text-[#343832] font-medium"
-                    >
-                      Filter in Experiments &rarr;
-                    </Link>
-                  </div>
-
-                  {associatedExperiments.length === 0 ? (
-                    <div className="p-4 text-center border border-dashed border-[#E5E1D7] rounded-lg text-xs text-[#777A72]">
-                      No experiment definitions configured for this service yet.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {associatedExperiments.map(exp => (
-                        <Link
-                          key={exp.id}
-                          to={`/experiments/${exp.id}`}
-                          className="flex items-center justify-between p-3 rounded-lg border border-[#E5E1D7] hover:border-[#D8C8AE] hover:bg-[#FAF8F3] transition-colors"
-                        >
-                          <div>
-                            <div className="font-medium text-xs text-[#343832]">{exp.name}</div>
-                            <div className="text-[11px] font-mono text-[#777A72] mt-0.5">{exp.task}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {exp.lastRun && <VerdictBadge verdict={exp.lastRun.verdict} size="sm" />}
-                            <ChevronRight className="w-4 h-4 text-[#777A72]" />
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Recent Runs for this App */}
-                <div className="p-6">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-3">
-                    Recent Verification Runs
-                  </h3>
-
-                  {associatedRuns.length === 0 ? (
-                    <div className="p-4 text-center border border-dashed border-[#E5E1D7] rounded-lg text-xs text-[#777A72]">
-                      No runs recorded yet.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {associatedRuns.slice(0, 3).map(run => (
-                        <Link
-                          key={run.id}
-                          to={`/experiments/${run.experimentId}?runId=${run.id}`}
-                          className="flex items-center justify-between p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-xs hover:border-[#D8C8AE] transition-colors"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className="font-mono font-medium text-[#343832]">{run.id}</span>
-                            <span className="text-[#777A72]">Run #{run.runNumber}</span>
-                            <span className="text-[11px] text-[#777A72]">{run.startTime}</span>
-                          </div>
-                          <VerdictBadge verdict={run.verdict} size="sm" />
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="p-8 text-center bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] text-sm text-[#777A72]">
-                Select an application from the left to inspect configuration and runs.
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       <RegisterAppModal
         isOpen={isRegisterOpen}
-        onClose={() => {
-          setIsRegisterOpen(false);
-          setEditingApp(null);
-        }}
-        onRegister={handleRegisterOrUpdate}
-        initialData={editingApp}
+        onClose={closeRegister}
+        onCreated={(created) => void handleCreated(created)}
+      />
+
+      <ApiKeyModal
+        isOpen={!!apiKeyState}
+        applicationName={apiKeyState?.applicationName ?? ''}
+        apiKey={apiKeyState?.apiKey ?? ''}
+        rotated={apiKeyState?.rotated}
+        onClose={() => setApiKeyState(null)}
       />
 
       <ConfirmationDialog
-        isOpen={!!deletingApp}
+        isOpen={!!deleting}
         title="Remove Application"
-        message={`Are you sure you want to deregister "${deletingApp?.name}"? Associated test definitions will be unlinked.`}
-        confirmLabel="Remove Application"
-        onConfirm={confirmDelete}
-        onCancel={() => setDeletingApp(null)}
+        message={`Delete "${deleting?.name}"? Applications referenced by experiments cannot be deleted (the backend returns 409). This does not delete the target application itself.`}
+        confirmLabel="Delete Application"
+        isBusy={busy}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleting(null)}
+      />
+
+      <ConfirmationDialog
+        isOpen={!!rotating}
+        title="Rotate API Key"
+        message={`Issue a new API key for "${rotating?.name}"? The previous key stops working immediately and every target application using it must be updated.`}
+        confirmLabel="Rotate Key"
+        isDestructive={false}
+        isBusy={busy}
+        onConfirm={handleRotate}
+        onCancel={() => setRotating(null)}
       />
     </Layout>
   );

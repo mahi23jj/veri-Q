@@ -1,268 +1,259 @@
-import React, { useState } from 'react';
-import type { Application, Experiment } from '../types';
-import { X, AlertCircle, CheckCircle, Info } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AlertCircle, FlaskConical, X } from 'lucide-react';
+import { api } from '../api/client';
+import type { Experiment } from '../api/types';
 
 interface NewExperimentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  applications: Application[];
-  onSave: (experiment: Partial<Experiment>, isDraft: boolean) => void;
-  initialData?: Partial<Experiment> | null;
+  /** Application that owns the experiment. Required by the backend. */
+  applicationId: string | null;
+  /** Registered task names for the datalist; free text is still allowed. */
+  taskNames: string[];
+  initialData?: Experiment | null;
+  onSaved: (experiment: Experiment) => void;
 }
 
 export const NewExperimentModal: React.FC<NewExperimentModalProps> = ({
   isOpen,
   onClose,
-  applications,
-  onSave,
-  initialData
+  applicationId,
+  taskNames,
+  initialData,
+  onSaved,
 }) => {
-  const [name, setName] = useState(initialData?.name || '');
-  const [appId, setAppId] = useState(initialData?.applicationId || (applications[0]?.id ?? ''));
-  const [task, setTask] = useState(initialData?.task || '');
-  const [logicalOpId, setLogicalOpId] = useState(initialData?.logicalOperationIdTemplate || 'tx_order_{uuid}');
-  const [checkpoint, setCheckpoint] = useState(initialData?.checkpoint || 'DB_TRANSACTION_COMMITTED');
-  const [failureScenario] = useState('Crash after commit');
-  const [timeout, setTimeoutVal] = useState(initialData?.timeoutSeconds || 15);
-  const [environment, setEnvironment] = useState(initialData?.environment || 'staging');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [taskName, setTaskName] = useState('');
+  const [checkpointName, setCheckpointName] = useState('');
+  const [timeoutSeconds, setTimeoutSeconds] = useState(60);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setName(initialData?.name ?? '');
+    setDescription(initialData?.description ?? '');
+    setTaskName(initialData?.task_name ?? '');
+    setCheckpointName(initialData?.checkpoint_name ?? '');
+    setTimeoutSeconds(initialData?.timeout_seconds ?? 60);
+    setFieldErrors({});
+    setSubmitError(null);
+    setBusy(false);
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
-  const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = 'Experiment name is required';
-    if (!appId) errs.appId = 'Please select a target application';
-    if (!task.trim()) errs.task = 'Task path or function name is required';
-    if (!checkpoint.trim()) errs.checkpoint = 'Checkpoint label is required';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
+  const editing = !!initialData;
 
-  const handleApplicationChange = (newAppId: string) => {
-    setAppId(newAppId);
-    const selected = applications.find(a => a.id === newAppId);
-    if (selected && !task) {
-      setTask(selected.importPath || selected.defaultTask || '');
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const errors: Record<string, string> = {};
+    const trimmedName = name.trim();
+    const trimmedTask = taskName.trim();
+    if (!trimmedName) errors.name = 'Experiment name is required';
+    if (!trimmedTask) errors.taskName = 'Target task name is required';
+    if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0 || timeoutSeconds > 3600) {
+      errors.timeout = 'Timeout must be between 1 and 3600 seconds';
     }
-  };
+    if (!editing && !applicationId) errors.name = 'Select an application first';
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
-  const handleSubmit = (asDraft: boolean) => {
-    if (!asDraft && !validate()) return;
-
-    const selectedApp = applications.find(a => a.id === appId);
-    onSave(
-      {
-        name: name.trim() || 'Untitled Draft Experiment',
-        applicationId: appId,
-        applicationName: selectedApp?.name || 'Unknown Application',
-        task: task.trim() || 'unspecified_task',
-        checkpoint: checkpoint.trim() || 'DB_TRANSACTION_COMMITTED',
-        logicalOperationIdTemplate: logicalOpId,
-        failureScenario,
-        timeoutSeconds: Number(timeout) || 15,
-        environment,
-        description: description.trim() || 'Simulated crash after commit checkpoint'
-      },
-      asDraft
-    );
-    onClose();
+    setBusy(true);
+    setSubmitError(null);
+    try {
+      const payload = {
+        name: trimmedName,
+        description: description.trim() || null,
+        task_name: trimmedTask,
+        checkpoint_name: checkpointName.trim() || null,
+        timeout_seconds: Math.round(timeoutSeconds),
+      };
+      const saved = editing
+        ? await api.updateExperiment(initialData!.id, payload)
+        : await api.createExperiment({
+            target_app_id: applicationId!,
+            scenario: 'crash_after_commit',
+            ...payload,
+          });
+      onSaved(saved);
+    } catch (cause) {
+      setSubmitError(cause instanceof Error ? cause.message : 'Could not save experiment');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#343832]/40 backdrop-blur-xs">
-      <div className="w-full max-w-2xl bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-xl overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E1D7] bg-[#FAF8F3] flex items-center justify-between">
+      <div className="w-full max-w-lg max-h-[92vh] bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-xl overflow-hidden flex flex-col">
+        <div className="px-6 py-4 border-b border-[#E5E1D7] bg-[#FAF8F3] flex items-start justify-between gap-4">
           <div>
             <h2 className="font-serif font-bold text-lg text-[#343832]">
-              {initialData?.id ? 'Edit Experiment Draft' : 'Configure Reliability Experiment'}
+              {editing ? 'Edit Draft Experiment' : 'New Reliability Experiment'}
             </h2>
             <p className="text-xs text-[#777A72] mt-0.5">
-              Simulate crash faults and evaluate post-redelivery business invariants.
+              Experiments are stored as a definition. The backend does not execute scenarios yet.
             </p>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 text-[#777A72] hover:text-[#343832] rounded-md hover:bg-[#EFEEE7] transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6 overflow-y-auto space-y-5">
-          {/* Failure Scenario Banner (Initial focus: Crash after commit) */}
-          <div className="p-3.5 bg-[#FAF8F3] rounded-lg border border-[#D8C8AE]/50 flex items-start gap-3">
-            <Info className="w-4 h-4 text-[#8297AC] shrink-0 mt-0.5" />
-            <div className="text-xs text-[#52564e]">
-              <span className="font-semibold text-[#343832]">Scenario: Crash after commit</span>
-              <p className="mt-0.5">
-                QueueProof interrupts the worker process immediately following the specified checkpoint, before the queue broker receives job ACK. This tests if operations stay idempotent after task redelivery.
-              </p>
-            </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1">
+              Experiment name <span className="text-[#A46F70]">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={200}
+              autoFocus
+              placeholder="e.g. Charge order survives worker crash"
+              className={`w-full px-3.5 py-2 text-sm bg-white border ${
+                fieldErrors.name ? 'border-[#A46F70]' : 'border-[#E5E1D7]'
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]`}
+            />
+            {fieldErrors.name && <p className="text-xs text-[#A46F70] mt-1">{fieldErrors.name}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
-                Experiment Name <span className="text-[#A46F70]">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Crash after inventory ledger commit"
-                className={`w-full px-3.5 py-2 text-sm bg-white border ${
-                  errors.name ? 'border-[#A46F70] focus:ring-[#A46F70]' : 'border-[#E5E1D7] focus:ring-[#879B83]'
-                } rounded-lg focus:outline-none focus:ring-2`}
-              />
-              {errors.name && <p className="text-xs text-[#A46F70] mt-1">{errors.name}</p>}
-            </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1">
+              Target task <span className="text-[#A46F70]">*</span>
+            </label>
+            <input
+              type="text"
+              list="experiment-task-options"
+              value={taskName}
+              onChange={(event) => setTaskName(event.target.value)}
+              maxLength={255}
+              placeholder="app.tasks.charge_order"
+              className={`w-full px-3.5 py-2 text-sm font-mono bg-white border ${
+                fieldErrors.taskName ? 'border-[#A46F70]' : 'border-[#E5E1D7]'
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]`}
+            />
+            <datalist id="experiment-task-options">
+              {taskNames.map((task) => (
+                <option key={task} value={task} />
+              ))}
+            </datalist>
+            {fieldErrors.taskName && (
+              <p className="text-xs text-[#A46F70] mt-1">{fieldErrors.taskName}</p>
+            )}
+            <p className="text-[11px] text-[#777A72] mt-1">
+              {taskNames.length > 0
+                ? 'Suggestions come from the discovered task catalog; any Celery task name is accepted.'
+                : 'No tasks discovered yet — type the fully qualified Celery task name.'}
+            </p>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
-                Target Application <span className="text-[#A46F70]">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1">
+                Scenario
               </label>
               <select
-                value={appId}
-                onChange={(e) => handleApplicationChange(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+                value="crash_after_commit"
+                disabled
+                className="w-full px-3.5 py-2 text-sm bg-[#EFEEE7] border border-[#E5E1D7] rounded-lg text-[#52564e]"
               >
-                {applications.map((app) => (
-                  <option key={app.id} value={app.id}>
-                    {app.name} ({app.framework})
-                  </option>
-                ))}
+                <option value="crash_after_commit">crash_after_commit</option>
               </select>
+              <p className="text-[11px] text-[#777A72] mt-1">Only scenario implemented by the backend.</p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
-                Environment
-              </label>
-              <select
-                value={environment}
-                onChange={(e) => setEnvironment(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
-              >
-                <option value="staging">staging</option>
-                <option value="development">development</option>
-                <option value="canary">canary</option>
-              </select>
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
-                Task Path / Definition <span className="text-[#A46F70]">*</span>
-              </label>
-              <input
-                type="text"
-                value={task}
-                onChange={(e) => setTask(e.target.value)}
-                placeholder="e.g. services.inventory.tasks:commit_stock_reservation"
-                className={`w-full px-3.5 py-2 text-sm font-mono bg-white border ${
-                  errors.task ? 'border-[#A46F70]' : 'border-[#E5E1D7]'
-                } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]`}
-              />
-              {errors.task && <p className="text-xs text-[#A46F70] mt-1">{errors.task}</p>}
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
-                Checkpoint Hook Name <span className="text-[#A46F70]">*</span>
-              </label>
-              <input
-                type="text"
-                value={checkpoint}
-                onChange={(e) => setCheckpoint(e.target.value)}
-                placeholder="DB_TRANSACTION_COMMITTED"
-                className="w-full px-3.5 py-2 text-sm font-mono bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
-              />
-              <span className="text-[11px] text-[#777A72] mt-1 block">Simulation fault fires at this exact hook.</span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
-                Logical Operation ID Template
-              </label>
-              <input
-                type="text"
-                value={logicalOpId}
-                onChange={(e) => setLogicalOpId(e.target.value)}
-                placeholder="tx_alloc_{uuid}"
-                className="w-full px-3.5 py-2 text-sm font-mono bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
-              />
-              <span className="text-[11px] text-[#777A72] mt-1 block">Carried across retries for idempotency verification.</span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1">
                 Timeout (seconds)
               </label>
               <input
                 type="number"
-                min="5"
-                max="120"
-                value={timeout}
-                onChange={(e) => setTimeoutVal(Number(e.target.value))}
-                className="w-full px-3.5 py-2 text-sm bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+                min={1}
+                max={3600}
+                value={timeoutSeconds}
+                onChange={(event) => setTimeoutSeconds(Number(event.target.value))}
+                className={`w-full px-3.5 py-2 text-sm bg-white border ${
+                  fieldErrors.timeout ? 'border-[#A46F70]' : 'border-[#E5E1D7]'
+                } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]`}
               />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
-                Hypothesis / Failure Description
-              </label>
-              <textarea
-                rows={2}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe what state might corrupt if the worker crashes before queue ACK..."
-                className="w-full px-3.5 py-2 text-sm bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
-              />
+              {fieldErrors.timeout && (
+                <p className="text-xs text-[#A46F70] mt-1">{fieldErrors.timeout}</p>
+              )}
             </div>
           </div>
 
-          {/* Configuration Summary Card */}
-          <div className="p-3.5 bg-[#EFEEE7]/60 rounded-lg border border-[#E5E1D7] text-xs space-y-1">
-            <div className="font-semibold text-[#343832] flex items-center gap-1.5">
-              <CheckCircle className="w-3.5 h-3.5 text-[#879B83]" />
-              Simulation Lifecycle Preview
-            </div>
-            <p className="text-[#61655b]">
-              Enqueue task <span className="font-mono text-[11px]">{task || 'task_name'}</span> &rarr; Execute till <span className="font-mono text-[11px]">{checkpoint}</span> &rarr; Force SIGKILL &rarr; Redeliver via broker &rarr; Audit ledger for duplicate mutations.
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1">
+              Checkpoint name
+            </label>
+            <input
+              type="text"
+              value={checkpointName}
+              onChange={(event) => setCheckpointName(event.target.value)}
+              maxLength={150}
+              placeholder="e.g. payment_charged"
+              className="w-full px-3.5 py-2 text-sm font-mono bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+            />
+            <p className="text-[11px] text-[#777A72] mt-1">
+              Matches a <span className="font-mono">veriq.checkpoint(name)</span> call in the task.
             </p>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#E5E1D7] bg-[#FAF8F3] flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-[#777A72] hover:text-[#343832] transition-colors"
-          >
-            Cancel
-          </button>
-          <div className="flex items-center gap-2">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-1">
+              Description
+            </label>
+            <textarea
+              rows={2}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="What reliability property should this experiment protect?"
+              className="w-full px-3.5 py-2 text-sm bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+            />
+          </div>
+
+          {submitError && (
+            <div className="p-3 bg-[#A46F70]/10 border border-[#A46F70]/30 rounded-lg text-xs text-[#733e3f] flex items-start gap-2">
+              <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span className="break-words">{submitError}</span>
+            </div>
+          )}
+
+          <div className="p-3 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg text-xs text-[#777A72] flex items-start gap-2">
+            <FlaskConical className="w-3.5 h-3.5 text-[#8297AC] mt-0.5 shrink-0" />
+            <span>
+              Saving creates a <span className="font-mono">DRAFT</span> definition. Only drafts can be
+              edited or deleted, and creating one does not enqueue any task.
+            </span>
+          </div>
+
+          <div className="pt-3 border-t border-[#E5E1D7] flex items-center justify-end gap-2">
             <button
               type="button"
-              onClick={() => handleSubmit(true)}
-              className="px-4 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] hover:bg-[#EFEEE7] rounded-lg transition-colors"
+              onClick={onClose}
+              disabled={busy}
+              className="px-4 py-2 text-xs font-medium text-[#777A72] hover:text-[#343832] disabled:opacity-50"
             >
-              Save as Draft
+              Cancel
             </button>
             <button
-              type="button"
-              onClick={() => handleSubmit(false)}
-              className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all"
+              type="submit"
+              disabled={busy}
+              className="px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] disabled:opacity-60 rounded-lg shadow-2xs transition-all"
             >
-              Create Experiment
+              {busy ? 'Saving…' : editing ? 'Update Draft' : 'Create Draft'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

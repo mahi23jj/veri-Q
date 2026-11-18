@@ -1,276 +1,298 @@
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import {
+  ChevronRight,
+  Edit2,
+  FlaskConical,
+  Info,
+  Plus,
+  RefreshCw,
+  Terminal,
+  Trash2,
+} from 'lucide-react';
 import { Layout } from '../components/Layout';
-import { INITIAL_EXPERIMENTS, INITIAL_APPLICATIONS } from '../mockData';
-import type { Experiment, ExperimentStatus } from '../types';
-import { VerdictBadge } from '../components/VerdictBadge';
+import { useScopedApplication } from '../context/application-context';
+import { useApiResource } from '../hooks/useApiResource';
+import { api } from '../api/client';
+import type { Experiment } from '../api/types';
 import { NewExperimentModal } from '../components/NewExperimentModal';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  FlaskConical,
-  Search,
-  Filter,
-  Plus,
-  Play,
-  Edit2,
-  Trash2,
-  ExternalLink,
-  ChevronRight,
-  Layers,
-  Clock
-} from 'lucide-react';
-import { toast } from 'react-toastify';
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+  Pagination,
+  Pill,
+  SectionCard,
+  StatusBadge,
+} from '../components/ui';
+import { formatRelative, shortId } from '../lib/format';
+
+const PAGE_SIZE = 20;
 
 export const Experiments: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const appFilter = searchParams.get('app');
-  const actionParam = searchParams.get('action');
+  const { appId } = useParams<{ appId: string }>();
+  const { application } = useScopedApplication(appId);
 
-  const [experiments, setExperiments] = useState<Experiment[]>(INITIAL_EXPERIMENTS);
-  const [applications] = useState(INITIAL_APPLICATIONS);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | ExperimentStatus>('all');
-  const [isModalOpen, setIsModalOpen] = useState(actionParam === 'create');
-  const [editingDraft, setEditingDraft] = useState<Experiment | null>(null);
-  const [deletingExperiment, setDeletingExperiment] = useState<Experiment | null>(null);
+  const [skip, setSkip] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT'>('ALL');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Experiment | null>(null);
+  const [deleting, setDeleting] = useState<Experiment | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  // Filtered experiments
-  const filteredExperiments = useMemo(() => {
-    return experiments.filter(exp => {
-      if (appFilter && exp.applicationId !== appFilter) return false;
-      if (statusFilter !== 'all' && exp.status !== statusFilter) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = exp.name.toLowerCase().includes(q);
-        const matchesTask = exp.task.toLowerCase().includes(q);
-        const matchesApp = exp.applicationName.toLowerCase().includes(q);
-        if (!matchesName && !matchesTask && !matchesApp) return false;
-      }
-      return true;
-    });
-  }, [experiments, appFilter, statusFilter, searchQuery]);
+  const loadExperiments = useCallback(async () => {
+    if (!appId) throw new Error('No application selected');
+    return api.listExperiments({ target_app_id: appId, skip, limit: PAGE_SIZE });
+  }, [appId, skip]);
 
-  const handleSave = (expData: Partial<Experiment>, isDraft: boolean) => {
-    if (editingDraft) {
-      const updated = experiments.map(e =>
-        e.id === editingDraft.id
-          ? {
-              ...e,
-              ...expData,
-              status: isDraft ? ('draft' as const) : ('active' as const)
-            }
-          : e
-      );
-      setExperiments(updated);
-      toast.success(isDraft ? 'Draft updated' : 'Experiment activated');
-      setEditingDraft(null);
-    } else {
-      const newExp: Experiment = {
-        id: `exp-${Date.now()}`,
-        name: expData.name || 'Untitled Experiment',
-        applicationId: expData.applicationId || applications[0].id,
-        applicationName: expData.applicationName || applications[0].name,
-        task: expData.task || 'unspecified_task',
-        status: isDraft ? 'draft' : 'active',
-        failureScenario: expData.failureScenario || 'Crash after commit',
-        checkpoint: expData.checkpoint || 'DB_TRANSACTION_COMMITTED',
-        logicalOperationIdTemplate: expData.logicalOperationIdTemplate || 'op_{uuid}',
-        timeoutSeconds: expData.timeoutSeconds || 15,
-        environment: expData.environment || 'staging',
-        description: expData.description || '',
-        totalRuns: 0,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setExperiments([newExp, ...experiments]);
-      toast.success(isDraft ? 'Experiment draft saved' : 'New reliability experiment configured');
+  const loadTasks = useCallback(async () => {
+    if (!appId) throw new Error('No application selected');
+    return api.listApplicationTasks(appId, { limit: 1000 });
+  }, [appId]);
+
+  const { data, loading, error, reload } = useApiResource(loadExperiments);
+  const { data: tasks } = useApiResource(loadTasks);
+
+  const visibleExperiments =
+    data?.items.filter((experiment) => statusFilter === 'ALL' || experiment.status === statusFilter) ??
+    [];
+
+  const openCreate = () => {
+    setEditing(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSaved = (saved: Experiment) => {
+    setIsModalOpen(false);
+    setEditing(null);
+    toast.success(
+      editing ? `Draft "${saved.name}" updated` : `Experiment "${saved.name}" created as a draft`,
+    );
+    reload();
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setBusy(true);
+    try {
+      await api.deleteExperiment(deleting.id);
+      toast.info(`Draft "${deleting.name}" deleted`);
+      setDeleting(null);
+      reload();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Could not delete experiment');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const confirmDelete = () => {
-    if (!deletingExperiment) return;
-    setExperiments(experiments.filter(e => e.id !== deletingExperiment.id));
-    toast.info(`Experiment "${deletingExperiment.name}" removed`);
-    setDeletingExperiment(null);
-  };
+  if (!appId) {
+    return (
+      <Layout>
+        <div className="p-6 md:p-8 max-w-7xl w-full mx-auto">
+          <EmptyState title="No application selected" description="Choose an application first." />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
-    <Layout onOpenNewExperiment={() => { setEditingDraft(null); setIsModalOpen(true); }}>
+    <Layout>
       <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E5E1D7]">
-          <div>
-            <h1 className="font-serif font-bold text-2xl md:text-3xl text-[#343832] tracking-tight">
-              Experiments
-            </h1>
-            <p className="text-xs md:text-sm text-[#777A72] mt-1">
-              Controlled failure definitions targeting background job checkpoints and boundary conditions.
+        <PageHeader
+          title="Reliability Experiments"
+          description={`Experiment definitions for ${application?.name ?? 'this application'}. These are separate from ordinary task execution telemetry.`}
+          eyebrow={<span className="text-[11px] text-[#777A72] font-mono">GET /api/v1/experiments</span>}
+          actions={
+            <>
+              <button
+                onClick={reload}
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+              <button
+                onClick={openCreate}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all"
+              >
+                <Plus className="w-4 h-4" /> New Experiment
+              </button>
+            </>
+          }
+        />
+
+        <div className="p-4 bg-[#D8C8AE]/25 border border-[#D8C8AE]/60 rounded-xl text-xs text-[#6b5a43] flex items-start gap-2.5">
+          <Info className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="leading-relaxed space-y-1">
+            <p>
+              <span className="font-semibold">Current backend capability:</span> experiments are stored as
+              definitions and drafts can be edited or deleted. There is no dashboard endpoint to list
+              experiment runs or their events, no failure injection, no runner control and no invariant
+              results yet.
+            </p>
+            <p>
+              Runs are created by a runner calling{' '}
+              <span className="font-mono">POST /api/v1/experiments/&#123;id&#125;/runs</span> with the
+              application API key. This dashboard does not create runs.
             </p>
           </div>
-          <button
-            onClick={() => {
-              setEditingDraft(null);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            New Experiment
-          </button>
         </div>
 
-        {/* Filter & Search Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#FDFCFA] p-3 rounded-xl border border-[#E5E1D7]">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-[#777A72] absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by experiment name, task, or application..."
-              className="w-full pl-9 pr-3.5 py-1.5 text-xs bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#879B83]"
-            />
-          </div>
+        {error && <ErrorState message={error} onRetry={reload} />}
 
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <span className="text-[11px] font-semibold uppercase text-[#777A72] mr-1 hidden sm:inline">
-              Status:
-            </span>
-            {(['all', 'active', 'draft', 'archived'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setStatusFilter(tab)}
-                className={`px-3 py-1 text-xs rounded-lg capitalize transition-colors font-medium ${
-                  statusFilter === tab
-                    ? 'bg-[#879B83]/15 text-[#343832] font-semibold border border-[#879B83]/30'
-                    : 'text-[#777A72] hover:bg-[#EFEEE7] hover:text-[#343832]'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Experiments Table */}
-        <div className="bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-2xs overflow-hidden">
-          {filteredExperiments.length === 0 ? (
-            <div className="p-12 text-center">
-              <FlaskConical className="w-8 h-8 text-[#8297AC] mx-auto mb-3 opacity-60" />
-              <h3 className="font-serif font-bold text-base text-[#343832]">No experiments match</h3>
-              <p className="text-xs text-[#777A72] mt-1 max-w-sm mx-auto">
-                Try modifying your search query or status filter to see experiment configurations.
-              </p>
+        <SectionCard
+          title="Experiment definitions"
+          description={data ? `${data.total} definition${data.total === 1 ? '' : 's'}` : 'Loading…'}
+          icon={<FlaskConical className="w-4 h-4 text-[#8297AC]" />}
+          actions={
+            <div className="flex items-center gap-1.5">
+              {(['ALL', 'DRAFT'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setStatusFilter(tab)}
+                  className={`px-3 py-1 text-[11px] rounded-lg font-medium transition-colors ${
+                    statusFilter === tab
+                      ? 'bg-[#879B83]/15 text-[#343832] border border-[#879B83]/30'
+                      : 'text-[#777A72] hover:bg-[#EFEEE7]'
+                  }`}
+                >
+                  {tab === 'ALL' ? 'All' : 'Draft'}
+                </button>
+              ))}
+            </div>
+          }
+          bodyClassName="p-0"
+        >
+          {loading && !data ? (
+            <LoadingState label="Loading experiments…" />
+          ) : visibleExperiments.length === 0 ? (
+            <div className="p-5">
+              <EmptyState
+                icon={<FlaskConical className="w-5 h-5" />}
+                title={statusFilter === 'DRAFT' ? 'No draft experiments' : 'No experiments yet'}
+                description="Create a definition to describe the task, scenario and checkpoint you want to protect. Creating one does not enqueue a task."
+                action={
+                  <button
+                    onClick={openCreate}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> New Experiment
+                  </button>
+                }
+              />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#FAF8F3] border-b border-[#E5E1D7] text-[#777A72] uppercase font-semibold text-[10px] tracking-wider">
-                  <tr>
-                    <th className="py-3 px-4">Experiment Name</th>
-                    <th className="py-3 px-4">Application & Task</th>
-                    <th className="py-3 px-4">Scenario Hook</th>
-                    <th className="py-3 px-4">Last Run Verdict</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E5E1D7]">
-                  {filteredExperiments.map(exp => (
-                    <tr
-                      key={exp.id}
-                      className="hover:bg-[#FAF8F3]/80 transition-colors group cursor-pointer"
-                      onClick={() => navigate(`/experiments/${exp.id}`)}
-                    >
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-[#343832] text-sm group-hover:text-[#5f745b] transition-colors">
-                          {exp.name}
-                        </div>
-                        <div className="text-[11px] text-[#777A72] mt-0.5 line-clamp-1">
-                          {exp.description}
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <div className="font-medium text-[#343832]">{exp.applicationName}</div>
-                        <div className="font-mono text-[10px] text-[#777A72] mt-0.5 max-w-xs truncate">
-                          {exp.task}
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <div className="text-[#343832] font-medium">{exp.failureScenario}</div>
-                        <div className="font-mono text-[10px] text-[#8297AC] mt-0.5">
-                          @{exp.checkpoint}
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        {exp.lastRun ? (
-                          <div>
-                            <VerdictBadge verdict={exp.lastRun.verdict} size="sm" />
-                            <div className="text-[10px] text-[#777A72] mt-1 font-mono">
-                              {exp.lastRun.date}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-[#777A72] italic">Not executed</span>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] uppercase font-mono font-medium ${
-                            exp.status === 'active'
-                              ? 'bg-[#879B83]/15 text-[#3e563a]'
-                              : exp.status === 'draft'
-                              ? 'bg-[#D8C8AE]/30 text-[#675438]'
-                              : 'bg-stone-100 text-stone-600'
-                          }`}
-                        >
-                          {exp.status}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Link
-                            to={`/experiments/${exp.id}`}
-                            className="p-1.5 text-[#5f745b] hover:bg-[#879B83]/15 rounded-md transition-colors"
-                            title="Inspect experiment"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </Link>
-
-                          {exp.status === 'draft' && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setEditingDraft(exp);
-                                  setIsModalOpen(true);
-                                }}
-                                className="p-1.5 text-[#777A72] hover:text-[#343832] hover:bg-[#EFEEE7] rounded-md transition-colors"
-                                title="Edit draft configuration"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setDeletingExperiment(exp)}
-                                className="p-1.5 text-[#A46F70] hover:bg-[#A46F70]/15 rounded-md transition-colors"
-                                title="Delete draft experiment"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                    <tr>
+                      <th className="px-5 py-2.5 font-semibold">Experiment</th>
+                      <th className="px-3 py-2.5 font-semibold">Task</th>
+                      <th className="px-3 py-2.5 font-semibold">Scenario</th>
+                      <th className="px-3 py-2.5 font-semibold">Checkpoint</th>
+                      <th className="px-3 py-2.5 font-semibold">Timeout</th>
+                      <th className="px-3 py-2.5 font-semibold">Status</th>
+                      <th className="px-3 py-2.5 font-semibold">Created</th>
+                      <th className="px-3 py-2.5" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E1D7]">
+                    {visibleExperiments.map((experiment) => {
+                      const isDraft = experiment.status === 'DRAFT';
+                      return (
+                        <tr key={experiment.id} className="hover:bg-[#FAF8F3] transition-colors">
+                          <td className="px-5 py-3 max-w-[280px]">
+                            <Link
+                              to={`/applications/${appId}/experiments/${experiment.id}`}
+                              className="block font-medium text-[#343832] hover:text-[#5f745b] truncate"
+                              title={experiment.name}
+                            >
+                              {experiment.name}
+                            </Link>
+                            <div className="text-[10px] text-[#777A72] mt-0.5 font-mono">
+                              {shortId(experiment.id, 10)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 max-w-[240px]">
+                            <div className="font-mono text-[11px] text-[#343832] truncate" title={experiment.task_name}>
+                              {experiment.task_name}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <Pill tone="blue">{experiment.scenario}</Pill>
+                          </td>
+                          <td className="px-3 py-3 font-mono text-[11px] text-[#52564e]">
+                            {experiment.checkpoint_name || '—'}
+                          </td>
+                          <td className="px-3 py-3 font-mono text-[11px] text-[#52564e]">
+                            {experiment.timeout_seconds}s
+                          </td>
+                          <td className="px-3 py-3">
+                            <StatusBadge status={experiment.status} />
+                          </td>
+                          <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#777A72]">
+                            {formatRelative(experiment.created_at)}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              {isDraft && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setEditing(experiment);
+                                      setIsModalOpen(true);
+                                    }}
+                                    className="p-1.5 text-[#777A72] hover:text-[#343832] hover:bg-[#EFEEE7] rounded-md transition-colors"
+                                    title="Edit draft"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleting(experiment)}
+                                    className="p-1.5 text-[#A46F70] hover:bg-[#A46F70]/15 rounded-md transition-colors"
+                                    title="Delete draft"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                              <Link
+                                to={`/applications/${appId}/experiments/${experiment.id}`}
+                                className="p-1.5 text-[#777A72] hover:text-[#343832] hover:bg-[#EFEEE7] rounded-md transition-colors"
+                                title="Inspect experiment"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-5 pb-4">
+                <Pagination total={data?.total ?? 0} skip={data?.skip ?? 0} limit={data?.limit ?? PAGE_SIZE} onChange={setSkip} />
+              </div>
+            </>
           )}
+        </SectionCard>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#777A72]">
+          <span>
+            Experiment events are stored separately from task execution events. This dashboard never merges
+            them.
+          </span>
+          <Link
+            to="/integration"
+            className="inline-flex items-center gap-1.5 font-medium text-[#5f745b] hover:text-[#343832]"
+          >
+            <Terminal className="w-3.5 h-3.5" /> SDK integration guide
+          </Link>
         </div>
       </div>
 
@@ -278,20 +300,22 @@ export const Experiments: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          setEditingDraft(null);
+          setEditing(null);
         }}
-        applications={applications}
-        onSave={handleSave}
-        initialData={editingDraft}
+        applicationId={appId}
+        taskNames={tasks?.items.map((task) => task.task_name) ?? []}
+        initialData={editing}
+        onSaved={handleSaved}
       />
 
       <ConfirmationDialog
-        isOpen={!!deletingExperiment}
+        isOpen={!!deleting}
         title="Delete Draft Experiment"
-        message={`Are you sure you want to permanently delete draft "${deletingExperiment?.name}"?`}
+        message={`Permanently delete draft "${deleting?.name}"? The backend rejects deletion of non-draft experiments and experiments referenced by runs.`}
         confirmLabel="Delete Draft"
-        onConfirm={confirmDelete}
-        onCancel={() => setDeletingExperiment(null)}
+        isBusy={busy}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleting(null)}
       />
     </Layout>
   );
