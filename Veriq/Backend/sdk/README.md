@@ -90,11 +90,73 @@ print(receipt.server_event_id, receipt.duplicate)
 The client keeps one reusable `httpx.Client` for its whole lifetime, so create
 the client once per worker process rather than per event.
 
+## Celery integration (automatic observation)
+
+Install the optional extra and wire the SDK into the application once:
+
+```bash
+pip install -e ".[celery]"     # or: pip install veriq[celery]
+```
+
+```python
+from veriq import VeriQ
+from veriq.celery import integrate
+
+veriq = VeriQ(api_url="http://localhost:8000", api_key="vq_...")
+integrate(celery_app, veriq)
+```
+
+`integrate` connects `task_prerun`, `task_postrun`, `task_failure`, `task_retry`,
+`worker_ready`, `heartbeat_sent` and `worker_shutdown`. It reports:
+
+| Celery signal | VeriQ event |
+|---|---|
+| `task_prerun` | `TASK_STARTED` |
+| `task_postrun` (success) | `TASK_SUCCEEDED` |
+| `task_failure` | `TASK_FAILED` |
+| `task_retry` | `TASK_RETRY_REQUESTED` |
+| `worker_ready` | worker `WORKER_STARTED` + task/queue discovery |
+| `heartbeat_sent` (throttled to 30s) | worker `WORKER_HEARTBEAT` |
+| `worker_shutdown` | worker `WORKER_SHUTTING_DOWN` |
+
+Key properties:
+
+- **One `execution_id` per actual attempt.** Celery retries and redeliveries may
+  reuse a `celery_task_id`; each execution attempt still gets a fresh UUID.
+- **Identity is captured in the executing task process** (`pid`,
+  `process_start_identity`, `worker_instance_id`). `task_received` is not used.
+- **No global task context.** A `contextvars.ContextVar` keeps concurrent
+  executions independent, and integration state is held per Celery application.
+- **No duplicate terminal event.** `task_failure` marks the execution terminal so
+  the following `task_postrun(state="FAILURE")` does not append a success.
+- **Eager calls are skipped** (`task.request.is_eager`) because they are not
+  worker executions.
+- **Optional experiment context.** `veriq_run_id` / `veriq_operation_id` are read
+  from task headers when present; ordinary executions work without them.
+- **Reporting cannot break the task.** Transport errors are logged and swallowed
+  by the integration; task return values and exceptions are untouched.
+- **Calling `integrate` twice returns the existing integration** (no duplicate
+  handlers). Multiple Celery applications in one process do not interfere.
+
+### Report-only checkpoints
+
+```python
+veriq.checkpoint("payment_charged")
+```
+
+Adds a `TASK_CHECKPOINT` event to the current execution timeline. It never
+pauses, waits for the runner, or terminates anything, and it needs no active
+experiment. Outside a tracked task it returns `None`; transport failures are
+logged and ignored so a checkpoint cannot break business code.
+
 ## Endpoints used
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/api/v1/experiment-runs/{run_id}/events` | Append an SDK event. `201` = recorded, `200` = duplicate `event_id` (already recorded). |
+| `POST` | `/api/v1/experiment-runs/{run_id}/events` | Append an experiment event. `201` = recorded, `200` = duplicate `event_id`. |
+| `POST` | `/api/v1/task-executions/events` | Append an ordinary execution lifecycle event (idempotent by `event_id`). |
+| `POST` | `/api/v1/workers/events` | Worker startup / heartbeat / shutdown plus queues. |
+| `POST` | `/api/v1/tasks/discovery` | Register the task names found in `celery_app.tasks`. |
 
 The backend forces `source = "SDK"`, authenticates the API key, and verifies the
 run belongs to the authenticated application. Runs themselves are created by the
@@ -135,11 +197,10 @@ code retries a failed submission, reuse the same `event_id` (or send the same
 
 ### Behaviour when submission fails
 
-The SDK raises; it does not swallow errors. Because it is embedded in a target
-application's worker, the failure of `send_event` propagates into that task
-unless the caller handles it. There is no fail-open checkpoint behaviour yet, so
-an event failure is simply an event failure — it never changes your task's
-business outcome by itself, but it will also not be recorded.
+Explicit calls (`send_event`, `report_execution`, `report_worker`,
+`discover_tasks`) raise; they do not swallow errors. The **Celery integration**
+and `checkpoint` are fail-open: their transport errors are logged and ignored so
+monitoring cannot change a task's business outcome.
 
 ## Isolated Celery worker setup
 
@@ -172,15 +233,14 @@ events for a run ID it is given.
 
 Intentionally **not** implemented in this milestone:
 
-- Celery signal instrumentation, task lifecycle observation
-- automatic execution-id generation or experiment header propagation
-- signed experiment tokens and manual checkpoints
 - checkpoint waiting/synchronization and failure injection
+- signed experiment tokens
 - Docker/process control (runner responsibility)
 - business invariant checking, arbitrary SQL execution
 - automatic retries, batching, async client
 - Kubernetes/ECS or non-Celery queue integrations
-- fail-open behaviour when VeriQ is unreachable
+- offline buffering or durable delivery
+- DPDP/GDPR-grade payload redaction configuration
 
 ## Development
 

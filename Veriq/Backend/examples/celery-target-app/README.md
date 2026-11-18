@@ -1,21 +1,21 @@
 # Celery target application (VeriQ reference integration)
 
-A deliberately small Celery application showing how a developer wires an
-**isolated VeriQ experiment worker** next to production-like work.
+A small but complete Celery application demonstrating VeriQ's discovery and
+ordinary execution observation. It is deliberately boring business code: VeriQ
+instruments it through Celery signals, not through task rewrites.
 
 ```text
 docker compose network
 ├── redis          broker (:6379, not published)
-├── target-db      the target application's own PostgreSQL (test data)
-├── worker         celery -Q normal --concurrency=2
-└── veriq-worker   celery -Q veriq.test --concurrency=1 --hostname=veriq@...
-                   + VERIQ_API_URL / VERIQ_API_KEY
+├── api            FastAPI :8100 — enqueues example tasks, initialises the SDK
+├── worker         celery -A app.worker -Q normal      --concurrency=2
+└── veriq-worker   celery -A app.worker -Q veriq.test  --concurrency=1 --hostname=veriq@...
 ```
 
 Both workers are built from **one image** and import **one Celery app**, so they
-run the same `app/tasks.py` code. The only differences are the queue they consume
-and the concurrency. `veriq-worker` has no Docker socket, no published ports, and
-no access to the `normal` queue.
+run the same `app/tasks.py` code. The differences are the queue they consume and
+the concurrency. The normal worker is instrumented too: ordinary telemetry does
+not require an experiment or the VeriQ worker.
 
 ## 1. Register the application and get an API key
 
@@ -35,7 +35,7 @@ rotate it later with `POST /api/v1/applications/{id}/api-key`.
 
 ```bash
 cd examples/celery-target-app
-cp .env.example .env      # set VERIQ_API_KEY, TARGET_POSTGRES_PASSWORD, ...
+cp .env.example .env      # set VERIQ_API_KEY, VERIQ_API_URL, ...
 ```
 
 `VERIQ_API_URL=http://host.docker.internal:8000` reaches a backend running on your
@@ -48,76 +48,124 @@ compose network, use `http://backend:8000` instead.
 docker compose up --build
 ```
 
-Watch each worker's queue subscription in its startup banner:
+What happens at startup:
+
+- `api` (FastAPI) imports the Celery app and calls `integrate(...)`, reporting
+  every registered task to `POST /api/v1/tasks/discovery`.
+- Each worker's `worker_ready` reports its `worker_instance_id`, PID,
+  process-start identity, registered tasks and queues.
+- `heartbeat_sent` refreshes `last_seen_at` every 30 seconds (throttled).
+
+Verify discovery:
 
 ```bash
-docker compose logs worker      | grep -A2 queues
-docker compose logs veriq-worker | grep -A2 queues
+curl -s 'http://localhost:8000/api/v1/registered-tasks?limit=100'
+curl -s 'http://localhost:8000/api/v1/workers?limit=100'
 ```
 
-Expected: `normal` on `worker`, `veriq.test` on `veriq-worker`, each with the
-same task list (`app.tasks.charge_order`, `app.tasks.veriq_probe`).
+Both workers should appear, `worker` with `normal` and `veriq-worker` with
+`veriq.test`. Historical worker rows stay after shutdown and become `OFFLINE`
+when heartbeats stop.
 
-## 4. Submit work to each queue
+## 4. Trigger example tasks
+
+The FastAPI app exposes simple endpoints:
+
+| Endpoint | Task | Outcome |
+|---|---|---|
+| `POST /tasks/charge-order` | `app.tasks.charge_order` | success + checkpoints |
+| `POST /tasks/checkpointed-payment` | `app.tasks.checkpointed_payment` | success + 3 checkpoints |
+| `POST /tasks/fail-order` | `app.tasks.fail_order` | raises `RuntimeError` |
+| `POST /tasks/retry-payment` | `app.tasks.retry_payment` | requests 2 retries, then succeeds (VeriQ queue) |
+| `POST /tasks/concurrent-probe?count=3` | `app.tasks.concurrent_probe` | 3 concurrent executions |
 
 ```bash
-# Normal business work -> worker
-docker compose exec worker python -c "from app.tasks import charge_order; print(charge_order.delay('order-1', 500).id)"
-
-# Experiment-queue work -> veriq-worker only
-docker compose exec worker python -c "from app.tasks import charge_order; print(charge_order.apply_async(('order-2', 500), queue='veriq.test').id)"
+curl -X POST 'http://localhost:8100/tasks/charge-order?order_id=order-1&amount_cents=500'
+curl -X POST 'http://localhost:8100/tasks/fail-order?order_id=order-2'
+curl -X POST 'http://localhost:8100/tasks/retry-payment?order_id=order-3'
+curl -X POST 'http://localhost:8100/tasks/concurrent-probe?count=3'
 ```
 
-Each worker's log names the task it executed. A task sent to `veriq.test` must
-never appear in the `worker` log.
+You can also dispatch from a worker container:
 
-## 5. Prove the SDK path from inside the isolated worker
+```bash
+docker compose exec worker python -c "from app.tasks import charge_order; print(charge_order.delay('order-9', 500).id)"
+# Same task definition on the isolated queue:
+docker compose exec worker python -c "from app.tasks import charge_order; print(charge_order.apply_async(('order-10', 500), queue='veriq.test').id)"
+```
 
-1. Create an experiment and a run for the registered application (the runner will
-   do this later; for now use the API with your API key):
+## 5. Inspect executions and timelines
 
-   ```bash
-   KEY=vq_...
-   curl -s -X POST http://localhost:8000/api/v1/experiments \
-     -H 'Content-Type: application/json' \
-     -d '{"target_app_id":"<app-id>","name":"probe","task_name":"app.tasks.veriq_probe","scenario":"crash_after_commit"}'
+```bash
+# List ordinary executions (no experiment required)
+curl -s 'http://localhost:8000/api/v1/task-executions?limit=20'
 
-   curl -s -X POST http://localhost:8000/api/v1/experiments/<experiment-id>/runs \
-     -H "X-API-Key: $KEY"
-   ```
+# One execution with its events
+curl -s 'http://localhost:8000/api/v1/task-executions/<execution-db-id>'
 
-2. Dispatch the probe task to the VeriQ queue with the run ID from the response:
+# Open the dashboard at http://localhost:5173 → Task catalog → a task
+```
 
-   ```bash
-   docker compose exec veriq-worker python -c "
-   from app.tasks import veriq_probe
-   veriq_probe.apply_async(('<run-id>',), queue='veriq.test')
-   "
-   ```
+Each attempt has its own `execution_id`; retries share the Celery task id but
+appear as separate rows. `TASK_CHECKPOINT` events show where the task reached.
 
-3. Confirm the event was stored:
+## 6. Observation selection
 
-   ```bash
-   curl -s http://localhost:8000/api/v1/experiment-runs/<run-id>/events -H "X-API-Key: $KEY"
-   ```
+Tasks are discovered independently of telemetry. The dashboard (or API) can
+disable observation for one task:
 
-`veriq_probe` is a **manual** SDK call. It is not Celery instrumentation: no
-signals, no automatic run-id generation, no checkpoints. Those are future
-milestones.
+```bash
+curl -s -X PATCH 'http://localhost:8000/api/v1/registered-tasks/<task-db-id>/observation' \
+  -H 'Content-Type: application/json' -d '{"status":"DISABLED"}'
+```
+
+New execution events for that task are acknowledged but not stored. Discovery
+and heartbeats continue, so the task stays in the catalog with status
+`DISABLED`. Set `OBSERVING` (or `DISCOVERED`) to resume storage.
+
+## 7. Experiment-linked executions (compatibility)
+
+The legacy manual probe still works for existing experiment runs:
+
+```bash
+KEY=vq_...
+curl -s -X POST http://localhost:8000/api/v1/experiments \
+  -H 'Content-Type: application/json' \
+  -d '{"target_app_id":"<app-id>","name":"probe","task_name":"app.tasks.veriq_probe","scenario":"crash_after_commit"}'
+
+curl -s -X POST http://localhost:8000/api/v1/experiments/<experiment-id>/runs -H "X-API-Key: $KEY"
+
+curl -X POST 'http://localhost:8100/tasks/veriq-probe/<run-id>'
+curl -s http://localhost:8000/api/v1/experiment-runs/<run-id>/events -H "X-API-Key: $KEY"
+```
+
+To link ordinary task executions to a run, dispatch with VeriQ headers:
+
+```python
+charge_order.apply_async(
+    ("order-11", 500),
+    headers={"veriq_run_id": "<run-id>", "veriq_operation_id": "<uuid>"},
+)
+```
+
+The backend validates that the run belongs to the authenticated application. A
+foreign/stale run id is ignored; the execution is still stored without a link.
 
 ## What is intentionally missing
 
 - No failure injection, worker killing or Docker control (runner milestone).
-- No automatic task instrumentation and no checkpoint coordination.
-- The sample tasks do not query PostgreSQL, so no migrations are needed; both
-  workers still receive `TARGET_DATABASE_URL` because real tasks would.
+- No checkpoint synchronization, pauses or worker termination.
+- The sample tasks do not query PostgreSQL; both workers still receive
+  `TARGET_DATABASE_URL` because real tasks would.
 - No health check on the Celery workers themselves (Celery has no HTTP endpoint);
-  verify them from their logs.
+  verify them from their logs and the VeriQ dashboard.
 
 ## Notes for adapting this to a real application
 
-- Install the SDK into the real image (`pip install veriq` once published) and
-  keep exactly the same application code in both workers.
+- Install the SDK into the real image (`pip install veriq[celery]` once
+  published) and keep exactly the same application code in both workers.
+- Call `integrate(celery_app, veriq)` once per process (for example in your worker
+  entrypoint and API startup).
 - Keep the VeriQ queue name distinct (`veriq.test`) and never subscribe a normal
   worker to it.
 - Point `TARGET_DATABASE_URL` at a disposable test database, and use test-mode

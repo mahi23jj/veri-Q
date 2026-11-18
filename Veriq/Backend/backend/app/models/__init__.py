@@ -4,6 +4,24 @@ from app.models.base import Base
 from app.models.experiment import Experiment
 from app.models.experiment_event import ExperimentEvent
 from app.models.experiment_run import ExperimentRun
+from app.models.observation import (
+    ExecutionEvent,
+    RegisteredTask,
+    TaskExecution,
+    Worker,
+    WorkerQueue,
+)
 from app.models.target_app import TargetApp
 
-__all__ = ["Base", "TargetApp", "Experiment", "ExperimentRun", "ExperimentEvent"]
+__all__ = [
+    "Base",
+    "TargetApp",
+    "Experiment",
+    "ExperimentRun",
+    "ExperimentEvent",
+    "RegisteredTask",
+    "Worker",
+    "WorkerQueue",
+    "TaskExecution",
+    "ExecutionEvent",
+]

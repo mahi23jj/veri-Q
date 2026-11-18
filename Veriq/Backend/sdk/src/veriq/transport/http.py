@@ -69,8 +69,8 @@ class HTTPTransport:
             "User-Agent": f"veriq-sdk/{__version__}",
         }
 
-    def send_event(self, run_id: uuid.UUID, body: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-        """POST one event body; return ``(status_code, response_json)``.
+    def _post(self, path: str, body: Any) -> tuple[int, Any]:
+        """POST JSON; return ``(status_code, parsed_json)``.
 
         Raises the mapped SDK exception for transport and HTTP failures. No
         retries happen here: a caller that retries must reuse the same event ID.
@@ -78,7 +78,7 @@ class HTTPTransport:
         if self._closed:
             raise VeriQClientClosedError("the VeriQ client is closed")
 
-        url = f"{self._config.api_url}/experiment-runs/{run_id}/events"
+        url = f"{self._config.api_url}{path}"
         try:
             response = self._client.post(
                 url, json=body, headers=self._headers(), timeout=self._config.timeout
@@ -93,20 +93,14 @@ class HTTPTransport:
                 f"could not reach the VeriQ backend at {self._config.base_url}"
             ) from exc
 
-        if response.status_code in (200, 201):
+        if response.status_code in (200, 201, 202):
             try:
-                payload = response.json()
+                return response.status_code, response.json()
             except ValueError as exc:
                 raise VeriQHTTPError(
                     "the VeriQ backend returned a non-JSON success response",
                     status_code=response.status_code,
                 ) from exc
-            if not isinstance(payload, dict):
-                raise VeriQHTTPError(
-                    "the VeriQ backend returned an unexpected response shape",
-                    status_code=response.status_code,
-                )
-            return response.status_code, payload
 
         detail = _detail_from_response(response)
         message = f"VeriQ backend rejected the event ({response.status_code}): {detail}"
@@ -126,6 +120,40 @@ class HTTPTransport:
         raise VeriQHTTPError(
             message, status_code=response.status_code, response_body=detail
         )
+
+    def send_event(self, run_id: uuid.UUID, body: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+        """POST one experiment event body; return ``(status_code, response_json)``."""
+        status_code, payload = self._post(f"/experiment-runs/{run_id}/events", body)
+        if not isinstance(payload, dict):
+            raise VeriQHTTPError(
+                "the VeriQ backend returned an unexpected response shape",
+                status_code=status_code,
+            )
+        return status_code, payload
+
+    def send_execution_event(self, body: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+        """POST one ordinary task-execution lifecycle event."""
+        status_code, payload = self._post("/task-executions/events", body)
+        if not isinstance(payload, dict):
+            raise VeriQHTTPError(
+                "the VeriQ backend returned an unexpected response shape",
+                status_code=status_code,
+            )
+        return status_code, payload
+
+    def report_worker(self, body: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+        """POST one worker discovery / heartbeat report."""
+        status_code, payload = self._post("/workers/events", body)
+        if not isinstance(payload, dict):
+            raise VeriQHTTPError(
+                "the VeriQ backend returned an unexpected response shape",
+                status_code=status_code,
+            )
+        return status_code, payload
+
+    def discover_tasks(self, body: dict[str, Any]) -> tuple[int, Any]:
+        """POST registered task names discovered from the Celery app."""
+        return self._post("/tasks/discovery", body)
 
     def close(self) -> None:
         """Release the HTTP client. Idempotent. Injected clients are left open."""

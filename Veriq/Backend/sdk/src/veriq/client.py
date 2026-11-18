@@ -9,12 +9,17 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from veriq.config import DEFAULT_TIMEOUT_SECONDS, VeriQConfig
 from veriq.events import VeriQEvent
-from veriq.exceptions import VeriQClientClosedError, VeriQConfigError, VeriQHTTPError
+from veriq.exceptions import (
+    VeriQClientClosedError,
+    VeriQConfigError,
+    VeriQError,
+    VeriQHTTPError,
+)
 from veriq.transport.http import HTTPTransport
 
 __all__ = ["VeriQ", "EventReceipt"]
@@ -110,6 +115,87 @@ class VeriQ:
             duplicate=status_code == 200,
             status_code=status_code,
         )
+
+    # ------------------------------------------------------------------
+    # Observation API (Celery integration and manual callers)
+    # ------------------------------------------------------------------
+    def report_execution(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Report one task-execution lifecycle event.
+
+        ``payload`` is the backend's execution-event body: execution identity
+        plus ``event_type``. A fresh idempotency ``event_id`` and a UTC
+        ``occurred_at`` are filled in when absent. Returns the backend response.
+        """
+        if self._transport.closed:
+            raise VeriQClientClosedError("the VeriQ client is closed")
+        if not isinstance(payload, dict):
+            raise VeriQConfigError("payload must be a dict")
+        body = dict(payload)
+        body.setdefault("event_id", str(uuid.uuid4()))
+        body.setdefault("occurred_at", datetime.now(timezone.utc).isoformat())
+        _status_code, response = self._transport.send_execution_event(body)
+        return response
+
+    def report_worker(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Report a worker instance's startup, heartbeat or shutdown."""
+        if self._transport.closed:
+            raise VeriQClientClosedError("the VeriQ client is closed")
+        if not isinstance(payload, dict):
+            raise VeriQConfigError("payload must be a dict")
+        body = dict(payload)
+        body.setdefault("occurred_at", datetime.now(timezone.utc).isoformat())
+        _status_code, response = self._transport.report_worker(body)
+        return response
+
+    def discover_tasks(
+        self, task_names: list[str], *, source: str = "SDK"
+    ) -> list[Any]:
+        """Register Celery task names with the backend task catalog.
+
+        Discovery is independent of observation: a discovered task is recorded
+        even when its ordinary execution telemetry is disabled.
+        """
+        if self._transport.closed:
+            raise VeriQClientClosedError("the VeriQ client is closed")
+        _status_code, response = self._transport.discover_tasks(
+            {"task_names": list(task_names), "source": source}
+        )
+        return response if isinstance(response, list) else []
+
+    def checkpoint(
+        self, name: str, payload: dict[str, Any] | None = None
+    ) -> dict[str, Any] | None:
+        """Report a read-only checkpoint for the current task execution.
+
+        Report-only: it never pauses, waits, or terminates anything. Returns
+        ``None`` when called outside a task tracked by the Celery integration,
+        which makes it safe to call unconditionally from business code.
+        """
+        from veriq.context import current_execution
+
+        if not isinstance(name, str) or not name.strip():
+            raise VeriQConfigError("checkpoint name must be a non-empty string")
+        context = current_execution()
+        if context is None:
+            return None
+
+        details: dict[str, Any] = {"checkpoint": name.strip()}
+        if payload:
+            details.update(payload)
+        event = context.identity_fields()
+        event["event_type"] = "TASK_CHECKPOINT"
+        event["payload"] = details
+        event["occurred_at"] = datetime.now(timezone.utc).isoformat()
+        try:
+            return self.report_execution(event)
+        except VeriQError as exc:
+            # Report-only: a checkpoint must never break the task it observes.
+            import logging
+
+            logging.getLogger("veriq").warning(
+                "VeriQ checkpoint report failed (ignored): %s", exc
+            )
+            return None
 
     def close(self) -> None:
         """Close the underlying HTTP client. Safe to call more than once."""

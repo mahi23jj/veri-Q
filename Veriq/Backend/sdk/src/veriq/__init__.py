@@ -1,9 +1,12 @@
 """VeriQ Python SDK.
 
-Reports experiment events from a target application to a VeriQ backend.
+Reports experiment events, ordinary task-execution telemetry and Celery
+discovery to a VeriQ backend.
 
-This first milestone is transport only: no Celery instrumentation, no
-automatic execution identity, no checkpoints, and no failure injection.
+Celery instrumentation lives in :mod:`veriq.celery` (``from veriq.celery import
+integrate``) and is optional: importing this package does not require Celery.
+Telemetry is report-only — the SDK never pauses, controls or terminates a
+worker.
 """
 
 from veriq._version import __version__

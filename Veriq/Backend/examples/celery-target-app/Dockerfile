@@ -19,4 +19,4 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY examples/celery-target-app/app ./app
 
 # Overridden per service in compose.yaml (the queue is the only difference).
-CMD ["celery", "-A", "app.celery_app", "worker", "-Q", "normal", "--loglevel=INFO"]
+CMD ["celery", "-A", "app.worker", "worker", "-Q", "normal", "--loglevel=INFO"]
