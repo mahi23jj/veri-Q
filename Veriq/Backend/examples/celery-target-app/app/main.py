@@ -71,6 +71,26 @@ def run_concurrent_probe(count: int = 3) -> dict:
     return {"celery_task_ids": ids, "queue": NORMAL_QUEUE}
 
 
+@app.post("/tasks/fetch-reference-data")
+def run_fetch_reference_data(
+    url: str = "https://example.com", timeout_seconds: int = 5
+) -> dict:
+    result = task_module.fetch_reference_data.apply_async(
+        (url, timeout_seconds), queue=NORMAL_QUEUE
+    )
+    return {"celery_task_id": result.id, "queue": NORMAL_QUEUE}
+
+
+@app.post("/tasks/record-document")
+def run_record_document(
+    document_id: str = "test-document-001", content_hash: str = "hash-test-001"
+) -> dict:
+    result = task_module.record_document.apply_async(
+        (document_id, content_hash), queue=NORMAL_QUEUE
+    )
+    return {"celery_task_id": result.id, "queue": NORMAL_QUEUE}
+
+
 @app.post("/tasks/veriq-probe/{run_id}")
 def run_veriq_probe(run_id: str) -> dict:
     """Dispatch the legacy manual SDK-event probe to the VeriQ queue."""

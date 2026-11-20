@@ -11,6 +11,18 @@ from app.models.observation import (
     Worker,
     WorkerQueue,
 )
+from app.models.planning import (
+    AdapterDefinition,
+    ApplicationAdapter,
+    CheckpointScenarioSelection,
+    TaskCheckpoint,
+    TaskScenarioSelection,
+    TaskTestContract,
+    TaskTestContractVersion,
+    TestPlan,
+    TestPlanRevision,
+    TestPlanTestCase,
+)
 from app.models.target_app import TargetApp
 
 __all__ = [
@@ -24,4 +36,14 @@ __all__ = [
     "WorkerQueue",
     "TaskExecution",
     "ExecutionEvent",
+    "TaskCheckpoint",
+    "TaskScenarioSelection",
+    "CheckpointScenarioSelection",
+    "TaskTestContract",
+    "TaskTestContractVersion",
+    "AdapterDefinition",
+    "ApplicationAdapter",
+    "TestPlan",
+    "TestPlanRevision",
+    "TestPlanTestCase",
 ]

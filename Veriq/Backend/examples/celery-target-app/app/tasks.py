@@ -9,11 +9,18 @@ configured. The workers are instrumented automatically by
 from __future__ import annotations
 
 import os
+import sqlite3
 import time
+import urllib.request
 import uuid
+from datetime import datetime, timezone
 
 from app.celery_app import celery_app
 from app.veriq_setup import checkpoint
+
+# The sample application's own storage. SQLite keeps the reference app
+# dependency-free while still giving a real database effect to measure.
+TARGET_SQLITE_PATH = os.environ.get("TARGET_SQLITE_PATH", "/tmp/veriq-target.db")
 
 
 @celery_app.task(name="app.tasks.charge_order")
@@ -94,6 +101,47 @@ def veriq_probe(experiment_run_id: str, message: str = "SDK communication succes
         "server_event_id": str(receipt.server_event_id),
         "duplicate": receipt.duplicate,
     }
+
+
+@celery_app.task(name="app.tasks.fetch_reference_data")
+def fetch_reference_data(
+    url: str = "https://example.com", timeout_seconds: int = 5
+) -> dict:
+    """Task with an HTTP dependency, used to plan dependency-failure scenarios.
+
+    ``after_http_response`` is reported *after* the request completed, so a
+    checkpoint-based test selected there runs after the external call.
+    """
+    checkpoint("before_http_request", {"url": url})
+    with urllib.request.urlopen(url, timeout=timeout_seconds) as response:
+        body = response.read()
+        status_code = response.status
+    checkpoint("after_http_response", {"status": status_code, "bytes": len(body)})
+    return {"url": url, "status": status_code, "bytes": len(body)}
+
+
+@celery_app.task(name="app.tasks.record_document")
+def record_document(document_id: str, content_hash: str = "hash-test-001") -> dict:
+    """Task that writes one row to the application database.
+
+    The primary key makes a duplicate delivery fail loudly (an application-level
+    duplicate effect), which is exactly what effect measurements are for. Cleanup
+    is expected to remove test-owned rows only.
+    """
+    checkpoint("before_database_save", {"document_id": document_id})
+    with sqlite3.connect(TARGET_SQLITE_PATH) as connection:
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS documents ("
+            "document_id TEXT PRIMARY KEY, content_hash TEXT NOT NULL, "
+            "created_at TEXT NOT NULL)"
+        )
+        connection.execute(
+            "INSERT INTO documents (document_id, content_hash, created_at) "
+            "VALUES (?, ?, ?)",
+            (document_id, content_hash, datetime.now(timezone.utc).isoformat()),
+        )
+    checkpoint("after_database_save", {"document_id": document_id})
+    return {"document_id": document_id, "status": "stored"}
 
 
 @celery_app.task(name="app.tasks.mixed_outcomes")

@@ -11,11 +11,17 @@ Python SDK, the package name and the docs now say **VeriQ**. Internal identifier
 shipped (the Compose project/DB name `queueproof`, the `queueproof_pgdata` volume) keep their original
 names so existing environments are not broken.
 
-**This repository now covers discovery and ordinary task observation.** The SDK instruments Celery
-automatically, VeriQ stores registered tasks, worker instances, queues, execution attempts and their
-event timelines, and the dashboard exposes a task catalog with per-task observation controls.
-There is still no experiment execution engine, no worker control, no failure injection and no
-invariant checker. The SDK only observes; it never starts, pauses or crashes a worker.
+**This repository now covers discovery, ordinary task observation and reliability-test planning.**
+The SDK instruments Celery automatically, VeriQ stores registered tasks, worker instances, queues,
+execution attempts and their event timelines, and the dashboard exposes a task catalog with per-task
+observation controls. On top of that, the backend can discover checkpoints, store versioned Task
+Test Contracts, register infrastructure adapters, evaluate scenario compatibility, generate a
+reproducible scenario matrix and track a test-plan review/approval lifecycle.
+
+There is still no experiment execution engine, no runner, no worker control, no failure injection
+and no invariant checker. Approval authorises a plan for the future runner; it executes nothing. The
+SDK only observes; it never starts, pauses or crashes a worker. See
+[`docs/reliability-planning.md`](docs/reliability-planning.md) for the planning model.
 
 ## Architecture (initial platform)
 
@@ -62,11 +68,16 @@ queueproof/
 │   │   │                            #   registered_tasks, workers, worker_queues,
 │   │   │                            #   task_executions, execution_events
 │   │   ├── schemas/                 # Pydantic v2 request/response models
+│   │   ├── domain/                  # pure rules: adapter catalogue, scenario catalogue,
+│   │   │                            #   compatibility engine, matrix generation
 │   │   ├── api/router.py            # /api/v1 router assembly
 │   │   ├── api/routes/              # health, applications, experiments, runs,
-│   │   │                            #   observations (SDK ingest), catalog (dashboard)
-│   │   └── services/                # application, experiment, run, discovery, observation
-│   ├── alembic/                     # env.py (reads DATABASE_URL), versions/0001..0003
+│   │   │                            #   observations (SDK ingest), catalog (dashboard),
+│   │   │                            #   planning (contracts, adapters, matrix, plans)
+│   │   └── services/                # application, experiment, run, discovery, observation,
+│   │                                #   checkpoint, contract, adapter, compatibility,
+│   │                                #   matrix, test-plan
+│   ├── alembic/                     # env.py (reads DATABASE_URL), versions/0001..0004
 │   ├── scripts/wait_for_database.py # blocks until Postgres accepts connections
 │   ├── tests/                       # pytest suite (isolated SQLite, see Testing)
 │   ├── alembic.ini
@@ -126,6 +137,39 @@ Ordinary telemetry never writes `experiment_events` and never needs a fake run. 
 `experiment_runs` row only when the SDK reports VeriQ headers and the run belongs to the authenticated
 application. `registered_tasks` are discovered from the Celery app independently of whether their
 telemetry is enabled.
+
+## Reliability-test planning
+
+Planning tables are additive (`alembic` revision `0004_planning`). The conceptual flow is:
+
+```text
+registered_tasks ──► task_checkpoints (discovered from SDK checkpoint events)
+        │
+        ├──► task_test_contracts (+ immutable versions: safe input, effect measurement,
+        │                                             assertions, cleanup)
+        ├──► application_adapters (http / database / broker / storage / custom)
+        ├──► task_scenario_selections + checkpoint_scenario_selections
+        │
+        ▼
+  compatibility engine (COMPATIBLE / NEEDS_CONFIGURATION / UNSUPPORTED, with reasons)
+        ▼
+  test_plans ──1:N──► test_plan_revisions ──1:N──► test_plan_test_cases
+                                (DRAFT → VALIDATING → READY_FOR_REVIEW → APPROVED)
+```
+
+* Normal execution telemetry is untouched: checkpoints remain report-only, and an execution can
+  succeed while an experiment or plan fails.
+* `app/domain/` is pure Python (no ORM, no FastAPI), so compatibility evaluation and matrix
+  generation are deterministic and unit-testable.
+* Approval records `approved_revision`; any later plan or contract change requires review again.
+* No part of this stage executes tasks, injects failures or controls workers.
+
+API groups live under `/api/v1`: `/scenarios`, `/adapter-types`,
+`/applications/{id}/adapters`, `/applications/{id}/contracts`,
+`/applications/{id}/checkpoints`, `/applications/{id}/registered-tasks/{task}/scenarios`,
+`/applications/{id}/compatibility/evaluate` and `/applications/{id}/test-plans`. The
+[planning documentation](docs/reliability-planning.md) lists the contract schema, adapter
+capabilities, scenario requirements, compatibility reason codes and the approval lifecycle.
 
 ## Prerequisites
 

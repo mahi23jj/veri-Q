@@ -78,6 +78,8 @@ The FastAPI app exposes simple endpoints:
 | `POST /tasks/fail-order` | `app.tasks.fail_order` | raises `RuntimeError` |
 | `POST /tasks/retry-payment` | `app.tasks.retry_payment` | requests 2 retries, then succeeds (VeriQ queue) |
 | `POST /tasks/concurrent-probe?count=3` | `app.tasks.concurrent_probe` | 3 concurrent executions |
+| `POST /tasks/fetch-reference-data?url=...` | `app.tasks.fetch_reference_data` | HTTP GET + checkpoints before/after the request |
+| `POST /tasks/record-document?document_id=...` | `app.tasks.record_document` | inserts one row in the sample SQLite database + checkpoints around the save |
 
 ```bash
 curl -X POST 'http://localhost:8100/tasks/charge-order?order_id=order-1&amount_cents=500'
@@ -150,6 +152,48 @@ charge_order.apply_async(
 
 The backend validates that the run belongs to the authenticated application. A
 foreign/stale run id is ignored; the execution is still stored without a link.
+
+## 8. Reliability-test planning
+
+The two tasks above exist so the planning workflow can be demonstrated against
+real code paths rather than invented metadata:
+
+| Task | Checkpoints | Useful for |
+|---|---|---|
+| `app.tasks.fetch_reference_data` | `before_http_request`, `after_http_response` | `dependency_timeout`, `successful_operation_lost_response` (HTTP adapter required) |
+| `app.tasks.record_document` | `before_database_save`, `after_database_save` | `database_connection_interruption`, duplicate effect measurement (database adapter required) |
+
+```bash
+APP=<application-id>
+TASK=<registered-task-id>          # from /api/v1/registered-tasks?target_app_id=$APP
+
+# 1. Configure adapters (they start as CONFIGURED, then get validated)
+curl -s -X POST http://localhost:8000/api/v1/applications/$APP/adapters \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"target-http","adapter_type":"http","enabled_triggers":["timeout_simulation","lost_response_simulation"],"configuration_ref":"cfg://sandbox/http"}'
+
+# 2. Create a task test contract (safe input + measurement + assertions)
+curl -s -X POST http://localhost:8000/api/v1/applications/$APP/registered-tasks/$TASK/contract \
+  -H 'Content-Type: application/json' \
+  -d '{"safe_input":{"document_id":"test-document-001"},"effect_measurements":[],"assertions":[{"id":"outcome","description":"Terminal state reached","type":"execution_status","expected":"FAILED"}],"cleanup":{"mode":"fixture_managed"}}'
+
+# 3. Inspect compatibility and the checkpoint choices
+curl -s http://localhost:8000/api/v1/applications/$APP/registered-tasks/$TASK/reliability
+
+# 4. Generate, review and approve a plan
+PLAN=$(curl -s -X POST http://localhost:8000/api/v1/applications/$APP/test-plans \
+  -H 'Content-Type: application/json' -d "{\"name\":\"doc plan\",\"task_ids\":[\"$TASK\"]}" | python -c 'import json,sys;print(json.load(sys.stdin)["id"])')
+curl -s -X POST http://localhost:8000/api/v1/applications/$APP/test-plans/$PLAN/generate
+curl -s -X POST http://localhost:8000/api/v1/applications/$APP/test-plans/$PLAN/validate
+curl -s -X POST http://localhost:8000/api/v1/applications/$APP/test-plans/$PLAN/submit
+curl -s -X POST http://localhost:8000/api/v1/applications/$APP/test-plans/$PLAN/approve \
+  -H 'Content-Type: application/json' -d '{"revision":1}'
+```
+
+Compatibility results only describe planning: no failure injection, worker
+termination or execution happens. `ready_for_execution` on an approved plan is
+an authorisation for the future runner, not a started test. See
+`docs/reliability-planning.md` for the full model.
 
 ## What is intentionally missing
 

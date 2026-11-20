@@ -26,7 +26,7 @@ from app.models import (
 )
 from app.models.observation import TELEMETRY_SUPPRESSED_STATUSES
 from app.schemas.observation import TaskExecutionEventCreate
-from app.services import discovery_service
+from app.services import checkpoint_service, discovery_service
 
 _TERMINAL_EVENTS = {
     "TASK_SUCCEEDED": "SUCCEEDED",
@@ -214,6 +214,17 @@ def report_execution_event(
         client_event_id=payload.event_id,
     )
     db.add(event)
+
+    # Checkpoint discovery is additive planning metadata: the event above is
+    # still ordinary telemetry and the task is never blocked or paused.
+    if payload.event_type == "TASK_CHECKPOINT":
+        checkpoint_service.record_checkpoint(
+            db,
+            target_app,
+            registered_task,
+            payload=payload.payload,
+            occurred_at=occurred_at,
+        )
 
     if payload.event_type == "TASK_STARTED":
         if execution.status == "RUNNING" and payload.started_at is not None:
