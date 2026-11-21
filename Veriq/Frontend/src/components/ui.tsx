@@ -95,21 +95,42 @@ function toneForStatus(status: string): BadgeTone {
     case 'ACTIVE':
     case 'COMPLETED':
     case 'PASSED':
+    case 'PASS':
+    case 'APPROVED':
+    case 'READY':
+    case 'CLEANED':
+    case 'VALIDATED':
       return 'sage';
     case 'FAILED':
     case 'ERROR':
     case 'OFFLINE':
     case 'CANCELLED':
+    case 'NEEDS_CHANGES':
+    case 'BLOCKED':
+    case 'INVALID':
       return 'rose';
     case 'RUNNING':
     case 'DISCOVERED':
     case 'PENDING':
     case 'PREPARING':
+    case 'PREPARING_FAULT':
     case 'VERIFYING':
+    case 'VALIDATING':
+    case 'PROVISIONING':
+    case 'STARTING':
+    case 'INJECTING':
+    case 'OBSERVING_RECOVERY':
+    case 'EVALUATING':
+    case 'FINALIZING':
+    case 'ARMED':
       return 'blue';
     case 'RETRYING':
     case 'DRAFT':
     case 'INCONCLUSIVE':
+    case 'INVALID_RUN':
+    case 'NEEDS_CONFIGURATION':
+    case 'READY_FOR_REVIEW':
+    case 'TRIGGERED':
       return 'beige';
     default:
       return 'muted';
@@ -117,7 +138,8 @@ function toneForStatus(status: string): BadgeTone {
 }
 
 function labelForStatus(status: string): string {
-  return status.charAt(0) + status.slice(1).toLowerCase();
+  const words = status.replace(/_/g, ' ').toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 export const StatusBadge: React.FC<{ status: string | null | undefined; label?: string }> = ({

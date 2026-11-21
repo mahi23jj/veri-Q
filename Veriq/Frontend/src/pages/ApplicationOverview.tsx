@@ -7,6 +7,7 @@ import {
   FlaskConical,
   ListChecks,
   Server,
+  ShieldCheck,
   Terminal,
   TriangleAlert,
 } from 'lucide-react';
@@ -101,6 +102,12 @@ export const ApplicationOverview: React.FC = () => {
                 className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
               >
                 <Activity className="w-3.5 h-3.5" /> Executions
+              </Link>
+              <Link
+                to={`${base}/reliability`}
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> Reliability tests
               </Link>
               <Link
                 to="/integration"
@@ -402,8 +409,15 @@ export const ApplicationOverview: React.FC = () => {
                     <Boxes className="w-4 h-4 text-[#777A72]" />
                   </div>
                   <p className="text-[11px] text-[#777A72] mt-2 leading-relaxed">
-                    Experiment execution, run listing and invariant verification are not implemented in
-                    the current backend.
+                    Legacy experiment definitions remain read-only history. Reliability plans, approved
+                    revisions and isolated runs are managed in{' '}
+                    <Link
+                      to={`${base}/reliability`}
+                      className="font-medium text-[#5f745b] hover:text-[#343832]"
+                    >
+                      Reliability testing
+                    </Link>
+                    .
                   </p>
                 </SectionCard>
               </div>

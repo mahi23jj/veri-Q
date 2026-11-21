@@ -14,6 +14,8 @@ import {
   Terminal,
   Settings,
   ChevronRight,
+  Gauge,
+  PlayCircle,
 } from 'lucide-react';
 import { useApplication } from '../context/application-context';
 import { API_BASE_URL } from '../api/client';
@@ -46,6 +48,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           name: 'Experiments',
           href: `/applications/${selectedApplication.id}/experiments`,
           icon: FlaskConical,
+        },
+        {
+          name: 'Reliability testing',
+          href: `/applications/${selectedApplication.id}/reliability`,
+          icon: Gauge,
+        },
+        {
+          name: 'Test runs',
+          href: `/applications/${selectedApplication.id}/reliability/runs`,
+          icon: PlayCircle,
         },
       ]
     : [];
@@ -159,8 +171,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </>
       ) : (
         <div className="mx-3 mt-4 p-3 rounded-lg bg-[#FAF8F3] border border-dashed border-[#E5E1D7] text-[11px] text-[#777A72] leading-relaxed">
-          Register a target application to see tasks, workers, executions and experiments in its
-          context.
+          Register a target application to see tasks, workers, executions, experiments and reliability
+          tests in its context.
         </div>
       )}
     </>
