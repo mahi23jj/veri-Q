@@ -26,6 +26,7 @@ from app.domain.planning.matrix import (
     generate_matrix,
     merge_assertions,
 )
+from app.domain.runtime.recovery import RecoveryPolicy
 from app.domain.scenarios.catalog import SCENARIO_CATALOG_VERSION, list_scenarios
 from app.models import (
     CheckpointScenarioSelection,
@@ -81,6 +82,9 @@ def build_matrix(
 
         contract_payload = contract.payload if contract is not None else {}
         task_assertions = (contract_payload or {}).get("assertions") or []
+        # Frozen into the generated case so later contract edits cannot change
+        # what an existing approval means.
+        recovery_policy = RecoveryPolicy.from_contract(contract_payload).to_dict()
         task_snapshot: dict[str, Any] = {
             "task_id": str(task.id),
             "task_name": task.task_name,
@@ -139,6 +143,7 @@ def build_matrix(
                     adapter_refs=_adapter_refs(result),
                     compatibility=result,
                     scenario_config=dict(stored.config or {}) if stored is not None else {},
+                    recovery_policy=recovery_policy,
                 )
             )
 
@@ -202,6 +207,7 @@ def build_matrix(
                         adapter_refs=_adapter_refs(result),
                         compatibility=result,
                         scenario_config=dict(stored.config or {}) if stored is not None else {},
+                        recovery_policy=recovery_policy,
                     )
                 )
             task_snapshot["checkpoints"].append(checkpoint_snapshot)

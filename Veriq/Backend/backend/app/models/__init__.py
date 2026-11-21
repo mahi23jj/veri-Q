@@ -23,6 +23,16 @@ from app.models.planning import (
     TestPlanRevision,
     TestPlanTestCase,
 )
+from app.models.runtime import (
+    CheckpointWait,
+    FaultEvent,
+    RecoveryObservation,
+    RunnerCredential,
+    RunnerEnvironment,
+    RunnerWorker,
+    RuntimeEvent,
+    TestCaseRun,
+)
 from app.models.target_app import TargetApp
 
 __all__ = [
@@ -46,4 +56,12 @@ __all__ = [
     "TestPlan",
     "TestPlanRevision",
     "TestPlanTestCase",
+    "TestCaseRun",
+    "RunnerEnvironment",
+    "RunnerWorker",
+    "FaultEvent",
+    "RecoveryObservation",
+    "RuntimeEvent",
+    "CheckpointWait",
+    "RunnerCredential",
 ]

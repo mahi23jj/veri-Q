@@ -225,6 +225,18 @@ def report_execution_event(
             payload=payload.payload,
             occurred_at=occurred_at,
         )
+        # Test-only coordination: only a run that explicitly registered a
+        # checkpoint waiter is affected. Production checkpoints stay report-only.
+        from app.runtime import checkpoint_coordination
+
+        checkpoint_coordination.notify_checkpoint(
+            db,
+            operation_id=execution.veriq_operation_id or payload.veriq_operation_id,
+            checkpoint_name=(payload.payload or {}).get("checkpoint"),
+            execution_id=execution.execution_id,
+            celery_task_id=execution.celery_task_id,
+            occurred_at=occurred_at,
+        )
 
     if payload.event_type == "TASK_STARTED":
         if execution.status == "RUNNING" and payload.started_at is not None:

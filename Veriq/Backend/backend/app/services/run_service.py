@@ -32,8 +32,31 @@ class RunNumberConflictError(Exception):
 
 
 def get_target_app_for_api_key(db: Session, api_key: str) -> TargetApp | None:
-    """Resolve an API key to its target app, or ``None`` when unknown."""
-    return db.scalar(select(TargetApp).where(TargetApp.api_key_hash == hash_api_key(api_key)))
+    """Resolve an API key to its target app, or ``None`` when unknown.
+
+    Two kinds of key are accepted: the application's own key, and a run-scoped
+    runner credential minted for one isolated test worker. A run credential is
+    valid only while it is neither revoked nor expired, so cleanup ends the
+    isolated worker's ability to report telemetry.
+    """
+    from app.models.runtime import RunnerCredential
+
+    digest = hash_api_key(api_key)
+    target_app = db.scalar(select(TargetApp).where(TargetApp.api_key_hash == digest))
+    if target_app is not None:
+        return target_app
+
+    credential = db.scalar(
+        select(RunnerCredential).where(RunnerCredential.api_key_hash == digest)
+    )
+    if credential is None or credential.revoked_at is not None:
+        return None
+    expires_at = credential.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= datetime.now(timezone.utc):
+        return None
+    return db.get(TargetApp, credential.target_app_id)
 
 
 def _get_owned_run(db: Session, run_id: uuid.UUID, target_app: TargetApp) -> ExperimentRun:

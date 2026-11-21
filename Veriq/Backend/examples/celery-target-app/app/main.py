@@ -23,7 +23,16 @@ integrate_celery()
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "queues": [NORMAL_QUEUE, VERIQ_QUEUE]}
+    from app.celery_app import TASK_ACKS_LATE, TASK_REJECT_ON_WORKER_LOST
+
+    return {
+        "status": "ok",
+        "queues": [NORMAL_QUEUE, VERIQ_QUEUE],
+        "acknowledgement": {
+            "task_acks_late": TASK_ACKS_LATE,
+            "task_reject_on_worker_lost": TASK_REJECT_ON_WORKER_LOST,
+        },
+    }
 
 
 @app.get("/tasks")
@@ -88,6 +97,22 @@ def run_record_document(
     result = task_module.record_document.apply_async(
         (document_id, content_hash), queue=NORMAL_QUEUE
     )
+    return {"celery_task_id": result.id, "queue": NORMAL_QUEUE}
+
+
+@app.post("/tasks/record-document-pg")
+def run_record_document_pg(
+    document_id: str = "test-document-001", content_hash: str = "hash-test-001"
+) -> dict:
+    result = task_module.record_document_pg.apply_async(
+        (document_id, content_hash), queue=NORMAL_QUEUE
+    )
+    return {"celery_task_id": result.id, "queue": NORMAL_QUEUE}
+
+
+@app.post("/tasks/slow-operation")
+def run_slow_operation(seconds: float = 5.0) -> dict:
+    result = task_module.slow_operation.apply_async((seconds,), queue=NORMAL_QUEUE)
     return {"celery_task_id": result.id, "queue": NORMAL_QUEUE}
 
 

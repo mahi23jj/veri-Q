@@ -137,12 +137,29 @@ class CleanupInput(BaseModel):
         return self
 
 
+class RecoveryPolicyInput(BaseModel):
+    """What "recovered" means for this task's reliability tests.
+
+    The runner evaluates these expectations against observed execution evidence
+    only; no business-effect verification is performed in this phase.
+    """
+
+    max_attempts: int = Field(default=3, ge=1, le=20)
+    per_attempt_timeout_seconds: int = Field(default=60, ge=1, le=3600)
+    recovery_deadline_seconds: int = Field(default=120, ge=1, le=3600)
+    expected_terminal_state: Literal["SUCCEEDED", "FAILED", "ANY"] = "SUCCEEDED"
+    expect_retry: bool | None = None
+    expect_redelivery: bool | None = None
+    settle_seconds: int = Field(default=3, ge=1, le=120)
+
+
 class TaskTestContractPayload(BaseModel):
     safe_input: dict[str, Any] = Field(default_factory=dict)
     input_fixture_ref: str | None = Field(default=None, max_length=500)
     effect_measurements: list[EffectMeasurementInput] = Field(default_factory=list)
     assertions: list[AssertionInput] = Field(default_factory=list)
     cleanup: CleanupInput = Field(default_factory=CleanupInput)
+    recovery: RecoveryPolicyInput = Field(default_factory=RecoveryPolicyInput)
     notes: str | None = Field(default=None, max_length=4000)
 
     @field_validator("safe_input")
@@ -499,6 +516,7 @@ class TestCaseResponse(BaseModel):
     assertions: list[dict[str, Any]]
     cleanup: dict[str, Any] | None
     scenario_config: dict[str, Any] | None = None
+    recovery_policy: dict[str, Any] | None = None
     compatibility: dict[str, Any]
     configuration_fingerprint: str
 

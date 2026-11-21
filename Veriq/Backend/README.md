@@ -11,17 +11,21 @@ Python SDK, the package name and the docs now say **VeriQ**. Internal identifier
 shipped (the Compose project/DB name `queueproof`, the `queueproof_pgdata` volume) keep their original
 names so existing environments are not broken.
 
-**This repository now covers discovery, ordinary task observation and reliability-test planning.**
-The SDK instruments Celery automatically, VeriQ stores registered tasks, worker instances, queues,
-execution attempts and their event timelines, and the dashboard exposes a task catalog with per-task
-observation controls. On top of that, the backend can discover checkpoints, store versioned Task
-Test Contracts, register infrastructure adapters, evaluate scenario compatibility, generate a
-reproducible scenario matrix and track a test-plan review/approval lifecycle.
+**This repository now covers discovery, ordinary task observation, reliability-test planning and
+supervised execution of approved test cases.** The SDK instruments Celery automatically, VeriQ
+stores registered tasks, worker instances, queues, execution attempts and their event timelines,
+and the dashboard exposes a task catalog with per-task observation controls. On top of that, the
+backend can discover checkpoints, store versioned Task Test Contracts, register infrastructure
+adapters, evaluate scenario compatibility, generate a reproducible scenario matrix, track a
+test-plan review/approval lifecycle, and then execute one approved case in an isolated environment
+with a controlled fault, observed recovery and a deterministic verdict.
 
-There is still no experiment execution engine, no runner, no worker control, no failure injection
-and no invariant checker. Approval authorises a plan for the future runner; it executes nothing. The
-SDK only observes; it never starts, pauses or crashes a worker. See
-[`docs/reliability-planning.md`](docs/reliability-planning.md) for the planning model.
+Approval still executes nothing: a run starts only through the explicit start endpoint. The SDK only
+observes; it never starts, pauses or crashes a worker. The runner provisions the environment, injects
+the fault through the supervisor and evaluates recorded evidence — never an LLM, never a business
+effect. See [`docs/reliability-planning.md`](docs/reliability-planning.md) for the planning model and
+[`docs/reliability-runtime.md`](docs/reliability-runtime.md) for execution, fault injection, recovery
+and verdicts.
 
 ## Architecture (initial platform)
 
@@ -69,7 +73,11 @@ queueproof/
 │   │   │                            #   task_executions, execution_events
 │   │   ├── schemas/                 # Pydantic v2 request/response models
 │   │   ├── domain/                  # pure rules: adapter catalogue, scenario catalogue,
-│   │   │                            #   compatibility engine, matrix generation
+│   │   │                            #   compatibility engine, matrix generation, recovery
+│   │   │                            #   policy/evaluator and the run state machine
+│   │   ├── runtime/                 # environment provisioning, worker supervisor, execution
+│   │   │                            #   controller, fault injectors, observer, evaluator,
+│   │   │                            #   finalizer, orchestrator and background scheduler
 │   │   ├── api/router.py            # /api/v1 router assembly
 │   │   ├── api/routes/              # health, applications, experiments, runs,
 │   │   │                            #   observations (SDK ingest), catalog (dashboard),
@@ -77,8 +85,9 @@ queueproof/
 │   │   └── services/                # application, experiment, run, discovery, observation,
 │   │                                #   checkpoint, contract, adapter, compatibility,
 │   │                                #   matrix, test-plan
-│   ├── alembic/                     # env.py (reads DATABASE_URL), versions/0001..0004
+│   ├── alembic/                     # env.py (reads DATABASE_URL), versions/0001..0005
 │   ├── scripts/wait_for_database.py # blocks until Postgres accepts connections
+│   ├── scripts/runtime_e2e.py       # end-to-end run against real Docker + real worker
 │   ├── tests/                       # pytest suite (isolated SQLite, see Testing)
 │   ├── alembic.ini
 │   ├── requirements.txt / requirements-dev.txt
@@ -228,8 +237,11 @@ Stop with `docker compose down` (add `-v` to also delete any local database volu
 
 ## Database migrations
 
-Migrations live in `backend/alembic/versions/`. Current head: `0003_observation`
-(`0003` adds discovery + ordinary execution tables; `0002` adds `target_apps.api_key_hash` and
+Migrations live in `backend/alembic/versions/`. Current head: `0005_runtime`
+(`0005` adds the runner tables — test case runs, environments, workers, fault events, recovery
+observations, runtime events, checkpoint waits and run credentials — plus additive
+`target_apps.runtime_config` and `test_plan_test_cases.recovery_policy`; `0004` adds planning;
+`0003` adds discovery + ordinary execution; `0002` adds `target_apps.api_key_hash` and
 `experiment_events.client_event_id`; `0001_initial` is the base schema).
 Alembic reads `DATABASE_URL` from the environment (falling back to `backend/.env` settings).
 
@@ -358,6 +370,40 @@ Target applications need two variables (see the example's `.env.example`):
 | `VERIQ_API_URL` | Backend base URL, e.g. `http://host.docker.internal:8000` |
 | `VERIQ_API_KEY` | Key returned by `POST /api/v1/applications` (shown once) |
 
+## Reliability runtime (execution)
+
+The runner executes one approved test case at a time. It provisions an isolated Docker network with
+its own Redis broker and PostgreSQL database, starts the application's **own image** on a dedicated
+queue with `--concurrency=1`, submits the task with correlation headers, injects one controlled fault,
+observes attempts and recovery, records a verdict, and removes everything again.
+
+```text
+VALIDATING → PROVISIONING → PREPARING_FAULT → STARTING → RUNNING → INJECTING
+           → OBSERVING_RECOVERY → EVALUATING → FINALIZING → COMPLETED/FAILED/CANCELLED
+```
+
+Verdicts are exactly `PASS`, `FAIL`, `INCONCLUSIVE`, `INVALID_RUN` and `ERROR`, and are stored
+separately from the lifecycle state. `ERROR` means VeriQ's infrastructure failed, never that the
+application failed. Supported scenarios: `dependency_timeout`,
+`successful_operation_lost_response` (real threaded HTTP proxy), `duplicate_message_delivery`,
+`database_connection_interruption` (real TCP proxy in front of PostgreSQL) and
+`worker_termination` (only through the runner supervisor).
+
+API: `PUT|GET /applications/{id}/runtime-profile`, `GET /applications/{id}/runner/capabilities`,
+`POST /applications/{id}/test-plans/{plan}/runs`, `GET /applications/{id}/test-runs[/{run}]`,
+`POST /applications/{id}/test-runs/{run}/cancel` and
+`POST /applications/{id}/test-runs/recover-interrupted`.
+
+```bash
+# Real end-to-end check (backend running with Docker access and a reachable callback URL):
+cd backend && python scripts/runtime_e2e.py --image veriq-celery-target-worker:latest
+```
+
+The script registers an application, sets a Docker runtime profile, discovers a task from a real
+worker, approves a plan, starts one run and prints the verdict with its fault, recovery, worker and
+cleanup evidence. See [`docs/reliability-runtime.md`](docs/reliability-runtime.md) for the full model,
+isolation boundaries and limitations.
+
 ## Testing
 
 Backend tests use an **isolated throwaway SQLite database** (in-memory per test, schema from
@@ -386,6 +432,15 @@ multiple attempts per Celery task id, event idempotency, pagination and API-key 
 backend suite also drives the real SDK against the app in-process
 (`tests/test_sdk_integration.py`).
 
+Runtime coverage adds environment plans and profile validation, readiness reports, the simulated
+backend (success, provisioning/readiness/worker failures, cleanup errors), injector behaviour and
+validation (HTTP delay vs lost response, database interrupt/restore, duplicate submission, worker
+termination), the recovery policy/evaluator verdict matrix, orchestrator lifecycle tests with
+scripted application behaviour (checkpoint activation, fault that never triggers, cancellation,
+runner infrastructure failure, configuration drift, per-case isolation), the runtime API (profile,
+capabilities, start, read, ownership, cancel, recover) and run-scoped credential authentication and
+revocation.
+
 SDK coverage: configuration validation and URL normalization, event serialization/unique IDs/UTC
 timestamps, auth header construction, success, 401/403, 404/422, 5xx, connection failure, timeout,
 cleanup, and no credential logging. Celery coverage adds all supported signals, duplicate-terminal
@@ -395,10 +450,14 @@ failure resilience, concurrent context isolation, and a real in-process Celery w
 
 ## Current limitations & future work
 
-- **No experiment execution engine**: runs can be created (with a frozen config snapshot) through the
-  API, but nothing starts Celery, controls a worker, injects failures or checks invariants.
-- **No failure injection, checkpoint synchronization or worker termination.** Checkpoints are
-  report-only timeline events; they never pause execution.
+- **No experiment execution engine** for the legacy `experiments`/`experiment_runs` tables: those runs
+  can still be created through the API with a frozen config snapshot, but execution happens only
+  through the reliability runtime (`test_case_runs`) and only for approved plan cases.
+- **No business-effect verification.** The runtime verdict covers execution and recovery only
+  (`scope: execution_recovery_only`); invariant checking against the application's own data is a
+  later milestone.
+- **No invariant checker, no multi-tenant scheduling, no parallel runs per case.** Isolation is
+  Docker-only and intended for trusted applications, not as a security boundary.
 - **Dashboard endpoints are unauthenticated**; only the SDK/runner endpoints use API keys. This is the
   existing foundation boundary, not a new decision.
 - Worker staleness is computed lazily on read (120s threshold) rather than by a background job.

@@ -53,6 +53,7 @@ class EvaluatedCombination:
     adapter_refs: tuple[Mapping[str, Any], ...]
     compatibility: CompatibilityResult
     scenario_config: Mapping[str, Any] = field(default_factory=dict)
+    recovery_policy: Mapping[str, Any] = field(default_factory=dict)
 
     def configuration(self) -> dict:
         """The reproducible part of the case (no compatibility verdict)."""
@@ -73,6 +74,7 @@ class EvaluatedCombination:
             "cleanup": dict(self.cleanup),
             "adapter_refs": [dict(a) for a in self.adapter_refs],
             "scenario_config": dict(self.scenario_config),
+            "recovery_policy": dict(self.recovery_policy),
         }
 
     @property
@@ -126,6 +128,7 @@ class MatrixRow:
             "assertions": [dict(a) for a in combination.assertions],
             "cleanup": dict(combination.cleanup),
             "scenario_config": dict(combination.scenario_config),
+            "recovery_policy": dict(combination.recovery_policy),
             "compatibility": combination.compatibility.to_dict(),
             "configuration_fingerprint": combination.configuration_fingerprint,
         }

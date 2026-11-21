@@ -379,6 +379,24 @@ def test_worker_startup_heartbeat_shutdown_and_queues(backend: MockBackend, inte
     assert "worker.demo" in started["registered_tasks"]
 
 
+def test_worker_ready_sender_is_the_consumer_itself(backend: MockBackend, integrations):
+    """Celery sends ``worker_ready`` with the Consumer, not the WorkController."""
+
+    app = make_app("consumer-sender")
+    _client, integration = integrations.make(app, backend)
+    backend.reply(201, {})
+
+    class Consumer:
+        hostname = "celery@consumer-1"
+        queues = {"veriq.test": object()}
+
+    worker_ready.send(sender=Consumer())
+
+    queues = {q["name"]: q for q in backend.json_bodies[0]["queues"]}
+    assert queues["veriq.test"]["is_consumed"] is True
+    assert queues["normal"]["is_consumed"] is False
+
+
 def test_worker_instance_ids_are_per_application(integrations):
     backend_a = MockBackend()
     backend_b = MockBackend()

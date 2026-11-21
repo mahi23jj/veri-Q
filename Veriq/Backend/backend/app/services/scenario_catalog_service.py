@@ -7,7 +7,11 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.domain.scenarios.catalog import SCENARIO_CATALOG_VERSION, list_scenarios
+from app.domain.scenarios.catalog import (
+    IMPLEMENTATION_STATUS_RUNNER,
+    SCENARIO_CATALOG_VERSION,
+    list_scenarios,
+)
 from app.services import adapter_registry_service
 
 
@@ -34,10 +38,11 @@ def scenario_detail(scenario_id: str) -> dict[str, Any]:
 def catalog_metadata() -> dict[str, Any]:
     return {
         "catalog_version": SCENARIO_CATALOG_VERSION,
-        "implementation_status": "PLANNING_ONLY",
+        "implementation_status": IMPLEMENTATION_STATUS_RUNNER,
         "note": (
-            "Scenarios are represented and compatibility-checked. Failure "
-            "injection and isolated execution are deferred to the runner phase."
+            "Scenarios are represented, compatibility-checked and injected by the "
+            "isolated runner. Planning and execution stay separate: an approved plan "
+            "revision is required before a run can be started."
         ),
     }
 

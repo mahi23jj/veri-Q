@@ -227,13 +227,17 @@ class CeleryIntegration:
         except Exception:  # pragma: no cover - amqp may not be initialised
             configured = {}
 
+        # ``worker_ready`` sends the Consumer itself, while heartbeat signals send
+        # the WorkController (which holds its consumer). Look at both.
         consumed: set[str] = set()
+        controllers = (getattr(sender, "queues", None),)
         consumer = getattr(sender, "consumer", None)
-        consumer_queues = getattr(consumer, "queues", None)
-        if isinstance(consumer_queues, dict):
-            consumed = {str(name) for name in consumer_queues}
-        elif isinstance(consumer_queues, (list, tuple, set)):
-            consumed = {str(name) for name in consumer_queues}
+        controllers += (getattr(consumer, "queues", None),)
+        for consumer_queues in controllers:
+            if isinstance(consumer_queues, dict):
+                consumed |= {str(name) for name in consumer_queues}
+            elif isinstance(consumer_queues, (list, tuple, set)):
+                consumed |= {str(name) for name in consumer_queues}
 
         reports: list[dict[str, Any]] = []
         for name, queue in configured.items():

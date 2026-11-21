@@ -54,7 +54,7 @@ def _setup(client: TestClient, name: str):
 
 def test_initial_scenario_catalog_contains_required_patterns(client: TestClient):
     payload = client.get("/api/v1/scenarios").json()
-    assert payload["implementation_status"] == "PLANNING_ONLY"
+    assert payload["implementation_status"] == "RUNNER"
     by_id = {item["id"]: item for item in payload["items"]}
     assert {
         "dependency_timeout",
@@ -67,7 +67,7 @@ def test_initial_scenario_catalog_contains_required_patterns(client: TestClient)
     for item in payload["items"]:
         assert item["version"] >= 1
         assert item["supported_status"] == "SUPPORTED"
-        assert item["implementation_status"] == "PLANNING_ONLY"
+        assert item["implementation_status"] == "RUNNER"
         assert item["adapter_requirements"]
         assert "configuration_schema" in item
         assert "expected_recovery" in item
@@ -222,7 +222,7 @@ def test_compatible_when_all_capabilities_present(client: TestClient):
     )
     assert result["status"] == "COMPATIBLE", result
     assert result["selected_adapters"][0]["adapter_id"] == adapter["id"]
-    assert result["execution_available"] is False
+    assert result["execution_available"] is True
 
 
 def test_lost_response_requires_authoritative_measurement(client: TestClient):
@@ -499,7 +499,7 @@ def test_engine_is_order_stable_for_adapters():
     assert first.selected_adapters[0]["adapter_id"] == "a-adapter"
 
 
-def test_engine_never_marks_execution_available():
+def test_engine_marks_execution_available_only_for_compatible_implemented_cases():
     scenario = get_scenario("worker_termination")
     assert scenario is not None
     result = evaluate(
@@ -528,5 +528,17 @@ def test_engine_never_marks_execution_available():
         ],
     )
     assert result.compatible is True
-    assert result.execution_available is False
+    assert result.execution_available is True
     assert any("redelivery" in warning.message.lower() for warning in result.warnings)
+
+    # A configuration problem still makes the case non-executable.
+    incomplete = evaluate(
+        task=TaskView(id="t1", task_name="app.tasks.anything"),
+        scenario=scenario,
+        trigger_type="automatic",
+        checkpoint=None,
+        contract=None,
+        adapters=[],
+    )
+    assert incomplete.compatible is False
+    assert incomplete.execution_available is False

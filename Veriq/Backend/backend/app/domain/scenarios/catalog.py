@@ -14,10 +14,11 @@ from dataclasses import dataclass, field
 # Bumped when any scenario definition changes semantically.
 SCENARIO_CATALOG_VERSION = "2026.11"
 
-# Planning support, not execution support. Every scenario in this catalogue is
-# PLANNING_ONLY: represented, selectable and compatibility-checked, but its
-# failure cannot be injected yet.
+# Implementation status describes the injector, not the plan: RUNNER means the
+# runtime layer has a real injector for the scenario. PLANNING_ONLY is kept for
+# any future scenario that is representable but not injectable yet.
 SUPPORTED_STATUS_SUPPORTED = "SUPPORTED"
+IMPLEMENTATION_STATUS_RUNNER = "RUNNER"
 IMPLEMENTATION_STATUS_PLANNING_ONLY = "PLANNING_ONLY"
 
 
@@ -52,7 +53,7 @@ class ScenarioDefinition:
     requires_authoritative_measurement: bool = False
     requires_checkpoint: bool = False
     supported_status: str = SUPPORTED_STATUS_SUPPORTED
-    implementation_status: str = IMPLEMENTATION_STATUS_PLANNING_ONLY
+    implementation_status: str = IMPLEMENTATION_STATUS_RUNNER
     warnings: tuple[str, ...] = ()
 
     @property
@@ -281,6 +282,7 @@ _DATABASE_INTERRUPTION = ScenarioDefinition(
         "properties": {
             "interrupt_after_statements": {"type": "integer", "minimum": 1, "maximum": 100},
             "preserve_existing_transaction": {"type": "boolean"},
+            "interruption_seconds": {"type": "integer", "minimum": 1, "maximum": 300},
         },
         "additionalProperties": False,
     },

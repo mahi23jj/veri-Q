@@ -16,6 +16,11 @@ const Executions = React.lazy(() => import('./src/pages/Executions'));
 const ExecutionDetail = React.lazy(() => import('./src/pages/ExecutionDetail'));
 const Experiments = React.lazy(() => import('./src/pages/Experiments'));
 const ExperimentDetail = React.lazy(() => import('./src/pages/ExperimentDetail'));
+const Reliability = React.lazy(() => import('./src/pages/Reliability'));
+const ReliabilityTask = React.lazy(() => import('./src/pages/ReliabilityTask'));
+const ReliabilityPlan = React.lazy(() => import('./src/pages/ReliabilityPlan'));
+const TestRuns = React.lazy(() => import('./src/pages/TestRuns'));
+const TestRunDetail = React.lazy(() => import('./src/pages/TestRunDetail'));
 const Integration = React.lazy(() => import('./src/pages/Integration'));
 const Settings = React.lazy(() => import('./src/pages/Settings'));
 const NotFound = React.lazy(() => import('./src/pages/NotFound'));
@@ -55,6 +60,20 @@ const App: React.FC = () => {
               <Route
                 path="/applications/:appId/experiments/:experimentId"
                 element={<ExperimentDetail />}
+              />
+              <Route path="/applications/:appId/reliability" element={<Reliability />} />
+              <Route
+                path="/applications/:appId/reliability/tasks/:taskId"
+                element={<ReliabilityTask />}
+              />
+              <Route path="/applications/:appId/reliability/runs" element={<TestRuns />} />
+              <Route
+                path="/applications/:appId/reliability/runs/:runId"
+                element={<TestRunDetail />}
+              />
+              <Route
+                path="/applications/:appId/reliability/:planId"
+                element={<ReliabilityPlan />}
               />
               <Route path="/integration" element={<Integration />} />
               <Route path="/settings" element={<Settings />} />

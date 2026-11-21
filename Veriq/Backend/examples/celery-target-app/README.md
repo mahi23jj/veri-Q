@@ -190,17 +190,49 @@ curl -s -X POST http://localhost:8000/api/v1/applications/$APP/test-plans/$PLAN/
   -H 'Content-Type: application/json' -d '{"revision":1}'
 ```
 
-Compatibility results only describe planning: no failure injection, worker
-termination or execution happens. `ready_for_execution` on an approved plan is
-an authorisation for the future runner, not a started test. See
-`docs/reliability-planning.md` for the full model.
+Compatibility results still describe planning only, and approving a plan executes
+nothing. `ready_for_execution` on an approved plan is the authorisation the
+runner checks when a start call arrives. See `docs/reliability-planning.md` for
+the planning model.
+
+## 9. Let the runner execute a case
+
+The runner launches **this image** in its own network with its own Redis and
+PostgreSQL, on a queue nothing else consumes, then injects one controlled fault.
+Configure how it should launch the image once per application:
+
+```bash
+curl -s -X PUT http://localhost:8000/api/v1/applications/$APP/runtime-profile \
+  -H 'Content-Type: application/json' \
+  -d '{"runtime_type":"docker","image":"veriq-celery-target-worker:latest","queue":"veriq.test","concurrency":1,"env":{"CELERY_TASK_ACKS_LATE":"true","CELERY_TASK_REJECT_ON_WORKER_LOST":"true","CELERY_VISIBILITY_TIMEOUT":"10"}}'
+
+# Start one approved case (approval itself never starts anything):
+CASE=<test-case-id>                # from the revision's test cases
+curl -s -X POST "http://localhost:8000/api/v1/applications/$APP/test-plans/$PLAN/test-cases/$CASE/runs"
+
+# Read the evidence: lifecycle, verdict, fault events, attempts, worker states, cleanup.
+curl -s "http://localhost:8000/api/v1/applications/$APP/test-runs?limit=5"
+```
+
+The acknowledgement flags are what make a worker-termination test meaningful:
+with `task_acks_late` and `task_reject_on_worker_lost` the message is requeued
+after the visibility timeout, and the runner starts a replacement worker so the
+redelivery is actually consumed. Build the image before running:
+
+```bash
+docker build -f examples/celery-target-app/Dockerfile -t veriq-celery-target-worker:latest .
+```
+
+See `docs/reliability-runtime.md` for the verdict model, the supported scenarios
+and the isolation boundaries.
 
 ## What is intentionally missing
 
-- No failure injection, worker killing or Docker control (runner milestone).
-- No checkpoint synchronization, pauses or worker termination.
-- The sample tasks do not query PostgreSQL; both workers still receive
-  `TARGET_DATABASE_URL` because real tasks would.
+- The compose stack itself injects nothing: failure injection, worker termination
+  and Docker control belong to the VeriQ backend's runner, which starts its own
+  containers from this image (see section 9).
+- `record_document` writes SQLite; `record_document_pg` writes to
+  `TARGET_DATABASE_URL` and is the task to use for database fault tests.
 - No health check on the Celery workers themselves (Celery has no HTTP endpoint);
   verify them from their logs and the VeriQ dashboard.
 

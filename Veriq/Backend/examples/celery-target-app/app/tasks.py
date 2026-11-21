@@ -144,6 +144,53 @@ def record_document(document_id: str, content_hash: str = "hash-test-001") -> di
     return {"document_id": document_id, "status": "stored"}
 
 
+@celery_app.task(name="app.tasks.record_document_pg")
+def record_document_pg(document_id: str, content_hash: str = "hash-test-001") -> dict:
+    """Same effect as :func:`record_document`, but on PostgreSQL.
+
+    PostgreSQL is what the isolated runner provisions, and pointing this task at
+    the database fault proxy is what makes a real connection interruption test
+    possible. The primary key also makes a duplicate delivery fail loudly, which
+    is an application-level duplicate effect (not a VeriQ verdict).
+    """
+    checkpoint("before_database_save", {"document_id": document_id, "driver": "psycopg"})
+    database_url = os.environ.get("TARGET_DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("TARGET_DATABASE_URL must be set for record_document_pg")
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    import psycopg
+
+    with psycopg.connect(database_url, connect_timeout=3) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS documents_pg ("
+                "document_id TEXT PRIMARY KEY, content_hash TEXT NOT NULL, "
+                "created_at TIMESTAMPTZ NOT NULL DEFAULT now())"
+            )
+            cursor.execute(
+                "INSERT INTO documents_pg (document_id, content_hash) VALUES (%s, %s)",
+                (document_id, content_hash),
+            )
+        connection.commit()
+    checkpoint("after_database_save", {"document_id": document_id})
+    return {"document_id": document_id, "status": "stored"}
+
+
+@celery_app.task(name="app.tasks.slow_operation")
+def slow_operation(seconds: float = 5.0) -> dict:
+    """Long-running task with boundaries on both sides of the slow section.
+
+    Used for worker-termination tests: terminating between ``before_slow_work``
+    and ``after_slow_work`` proves the worker was executing this task.
+    """
+    checkpoint("before_slow_work", {"seconds": seconds})
+    time.sleep(max(0.0, float(seconds)))
+    checkpoint("after_slow_work", {"seconds": seconds})
+    return {"status": "completed", "seconds": seconds, "pid": os.getpid()}
+
+
 @celery_app.task(name="app.tasks.mixed_outcomes")
 def mixed_outcomes(fail: bool = False) -> dict:
     """Single task used to exercise both outcomes; handy for demos."""

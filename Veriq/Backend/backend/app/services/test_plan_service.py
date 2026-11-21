@@ -216,6 +216,7 @@ def generate(db: Session, plan: TestPlan) -> tuple[TestPlan, TestPlanRevision, d
                 assertions=payload["assertions"],
                 cleanup=payload["cleanup"] or None,
                 scenario_config=payload["scenario_config"] or None,
+                recovery_policy=payload.get("recovery_policy") or None,
                 compatibility=payload["compatibility"],
                 configuration_fingerprint=payload["configuration_fingerprint"],
             )

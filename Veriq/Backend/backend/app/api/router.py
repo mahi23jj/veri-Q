@@ -8,6 +8,7 @@ from app.api.routes import (
     observations,
     planning,
     runs,
+    runtime,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -20,3 +21,5 @@ api_router.include_router(observations.router)
 api_router.include_router(catalog.router)
 # Reliability-test planning: contracts, adapters, scenarios, matrix and plans.
 api_router.include_router(planning.router)
+# Reliability-test runtime: isolated execution, faults, recovery and verdicts.
+api_router.include_router(runtime.router)

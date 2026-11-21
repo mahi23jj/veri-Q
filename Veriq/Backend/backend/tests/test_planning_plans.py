@@ -103,7 +103,9 @@ def test_matrix_contains_one_case_per_selected_combination(client: TestClient):
     assert case["adapter_refs"]
     assert case["configuration_fingerprint"]
     assert case["compatibility"]["status"] == "COMPATIBLE"
-    assert case["compatibility"]["execution_available"] is False
+    # Executable by the runner once the revision is approved; generation alone
+    # still executes nothing.
+    assert case["compatibility"]["execution_available"] is True
     assert generated["summary"]["total_cases"] == len(cases)
 
 

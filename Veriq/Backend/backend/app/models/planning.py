@@ -381,6 +381,9 @@ class TestPlanTestCase(Base, UUIDPrimaryKeyMixin):
     )
     cleanup: Mapped[dict[str, Any] | None] = mapped_column(JSONBType, nullable=True)
     scenario_config: Mapped[dict[str, Any] | None] = mapped_column(JSONBType, nullable=True)
+    # Frozen recovery policy the runner will evaluate against (from the contract
+    # revision this case was generated from).
+    recovery_policy: Mapped[dict[str, Any] | None] = mapped_column(JSONBType, nullable=True)
     compatibility: Mapped[dict[str, Any]] = mapped_column(JSONBType, nullable=False)
     configuration_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
 

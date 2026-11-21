@@ -14,7 +14,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence
 
-from app.domain.scenarios.catalog import SUPPORTED_STATUS_SUPPORTED, ScenarioDefinition
+from app.domain.scenarios.catalog import (
+    IMPLEMENTATION_STATUS_RUNNER,
+    SUPPORTED_STATUS_SUPPORTED,
+    ScenarioDefinition,
+)
 
 STATUS_COMPATIBLE = "COMPATIBLE"
 STATUS_NEEDS_CONFIGURATION = "NEEDS_CONFIGURATION"
@@ -26,9 +30,13 @@ SEVERITY_CONFIGURATION = "configuration"
 SEVERITY_UNSUPPORTED = "unsupported"
 
 _EXECUTION_NOTE = (
-    "Planning only: VeriQ has no isolated runner or failure injection yet. "
-    "A COMPATIBLE result means the plan is well-formed, not that the fault can "
-    "already be injected."
+    "Compatible means the configuration is well-formed. Starting a run is a "
+    "separate explicit action on an approved plan revision; this evaluation "
+    "never executes anything."
+)
+_EXECUTION_UNAVAILABLE_NOTE = (
+    "No runner injector is implemented for this scenario yet, so it cannot be "
+    "executed even when the configuration is compatible."
 )
 
 
@@ -144,7 +152,9 @@ class CompatibilityResult:
             "trigger_type": self.trigger_type,
             "checkpoint_name": self.checkpoint_name,
             "execution_available": self.execution_available,
-            "execution_note": _EXECUTION_NOTE,
+            "execution_note": (
+                _EXECUTION_NOTE if self.execution_available else _EXECUTION_UNAVAILABLE_NOTE
+            ),
         }
 
 
@@ -507,13 +517,19 @@ def evaluate(
             Reason(code="SCENARIO_WARNING", severity=SEVERITY_WARNING, message=warning)
         )
 
+    status = _reasons_by_severity(reasons)
     return CompatibilityResult(
-        status=_reasons_by_severity(reasons),
+        status=status,
         reasons=tuple(reasons),
         selected_adapters=tuple(selected),
         scenario_id=scenario.id,
         scenario_version=scenario.version,
         trigger_type=trigger_type,
         checkpoint_name=checkpoint.name if checkpoint is not None else None,
-        execution_available=False,
+        # Executable by the runner once the plan revision is approved, and only
+        # when the configuration is compatible and an injector exists.
+        execution_available=(
+            status == STATUS_COMPATIBLE
+            and scenario.implementation_status == IMPLEMENTATION_STATUS_RUNNER
+        ),
     )
