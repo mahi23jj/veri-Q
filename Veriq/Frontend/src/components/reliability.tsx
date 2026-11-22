@@ -48,10 +48,10 @@ export const VerdictBadge: React.FC<{ verdict: string | null | undefined; large?
   }
   const tone = VERDICT_TONES[verdict] ?? 'muted';
   const classes: Record<string, string> = {
-    sage: 'bg-[#56D364]/15 text-[#56D364] border-[#56D364]/40',
-    rose: 'bg-[#F85149]/15 text-[#FF7B72] border-[#F85149]/40',
-    beige: 'bg-[#D29922]/15 text-[#E3B341] border-[#D29922]/40',
-    muted: 'bg-[#B1BAC4]/12 text-[#4e5149] border-[#B1BAC4]/25',
+    sage: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    beige: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    muted: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
   };
   return (
     <span

@@ -838,11 +838,6 @@ export const ReliabilityTask: React.FC = () => {
                                   </button>
                                 </summary>
                                 <div className="border-t border-[#30363D] px-3.5 py-3 space-y-3">
-                                  {scenario.description && (
-                                    <p className="text-sm text-[#B1BAC4] leading-relaxed">
-                                      {scenario.description}
-                                    </p>
-                                  )}
                                   <ReasonList reasons={scenario.compatibility.reasons.filter((reason) =>
                                     !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(reason.code),
                                   )} />

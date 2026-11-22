@@ -79,12 +79,13 @@ export const EmptyState: React.FC<{
 
 type BadgeTone = 'sage' | 'rose' | 'blue' | 'beige' | 'muted';
 
+/** Tinted-outline badges: low-opacity fill, readable text, hairline border. */
 const TONES: Record<BadgeTone, string> = {
-  sage: 'bg-[#56D364]/15 text-[#56D364] border-[#56D364]/30',
-  rose: 'bg-[#F85149]/15 text-[#FF7B72] border-[#F85149]/30',
-  blue: 'bg-[#D29922]/15 text-[#E3B341] border-[#D29922]/30',
-  beige: 'bg-[#D29922]/15 text-[#E3B341] border-[#D29922]/30',
-  muted: 'bg-[#B1BAC4]/12 text-[#B1BAC4] border-[#B1BAC4]/25',
+  sage: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  blue: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  beige: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  muted: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
 };
 
 function toneForStatus(status: string): BadgeTone {
@@ -167,6 +168,25 @@ export const Pill: React.FC<{ children: React.ReactNode; tone?: BadgeTone; title
     className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-mono whitespace-nowrap ${TONES[tone]}`}
   >
     {children}
+  </span>
+);
+
+export const Tooltip: React.FC<{
+  content: React.ReactNode;
+  children: React.ReactNode;
+  side?: 'top' | 'bottom';
+  className?: string;
+}> = ({ content, children, side = 'top', className }) => (
+  <span className={`group relative inline-flex ${className ?? ''}`}>
+    {children}
+    <span
+      role="tooltip"
+      className={`pointer-events-none absolute left-1/2 z-40 w-max max-w-[260px] -translate-x-1/2 rounded-md border border-[#30363D] bg-[#161B22] px-2.5 py-1.5 text-left text-[10.5px] font-normal leading-relaxed text-[#C9D1D9] shadow-xl opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 ${
+        side === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+      }`}
+    >
+      {content}
+    </span>
   </span>
 );
 

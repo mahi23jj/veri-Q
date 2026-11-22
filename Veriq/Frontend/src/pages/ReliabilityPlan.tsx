@@ -1,14 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import {
+  AlertTriangle,
   ArrowLeft,
   Ban,
   CheckCircle2,
   FlaskConical,
   Play,
   RefreshCw,
-  ShieldCheck,
   SkipForward,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
@@ -24,11 +24,22 @@ import {
   Pill,
   SectionCard,
   StatusBadge,
+  Tooltip,
 } from '../components/ui';
 import { CompatibilityBadge, VerdictBadge } from '../components/reliability';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { formatDateTime, formatRelative, shortId } from '../lib/format';
 import { prettyJson } from '../lib/json';
+
+const IssueList: React.FC<{ issues: string[] }> = ({ issues }) => (
+  <span className="block space-y-1">
+    {issues.map((issue) => (
+      <span key={issue} className="block">
+        {issue}
+      </span>
+    ))}
+  </span>
+);
 
 export const ReliabilityPlan: React.FC = () => {
   const { appId, planId } = useParams<{ appId: string; planId: string }>();
@@ -56,12 +67,48 @@ export const ReliabilityPlan: React.FC = () => {
   const [startCase, setStartCase] = useState<TestPlanTestCase | null>(null);
 
   const plan = data?.plan;
-  const cases = data?.cases ?? [];
+  const cases = useMemo(() => data?.cases ?? [], [data]);
   const runnerEnabled = data?.capabilities.runner_enabled ?? false;
 
   const selectedCase = cases.find((item) => item.id === selectedCaseId) ?? null;
   const approvedCurrent =
     plan?.status === 'APPROVED' && plan.approved_revision === plan.current_revision;
+
+  const readyCount = cases.filter((item) => item.status === 'READY').length;
+  const blockedCount = cases.length - readyCount;
+  const revision = plan?.latest_revision?.revision ?? plan?.current_revision ?? 0;
+
+  /** Blocking evidence per case, from the frozen comparison and the last validation. */
+  const caseIssues = useMemo(() => {
+    const map = new Map<string, string[]>();
+    const push = (key: string | undefined, message: string) => {
+      if (!key) return;
+      const existing = map.get(key) ?? [];
+      if (!existing.includes(message)) existing.push(message);
+      map.set(key, existing);
+    };
+    cases.forEach((item) => {
+      item.compatibility.reasons
+        .filter((reason) => reason.severity !== 'warning')
+        .forEach((reason) => push(item.case_key, `${reason.code}: ${reason.message}`));
+    });
+    validation?.blocking_issues.forEach((issue) => {
+      push(
+        String(issue.case_key ?? ''),
+        String(issue.message ?? issue.code ?? 'Blocked case'),
+      );
+    });
+    return map;
+  }, [cases, validation]);
+
+  const canApprove = plan?.status === 'READY_FOR_REVIEW' && blockedCount === 0 && !!revision;
+  const approveHint = approvedCurrent
+    ? `Revision ${revision} is already approved`
+    : blockedCount > 0
+      ? `Resolve ${blockedCount} blocking issue${blockedCount === 1 ? '' : 's'} to approve`
+      : plan?.status !== 'READY_FOR_REVIEW'
+        ? 'Submit this revision for review to approve'
+        : `Approve revision ${revision}`;
 
   const runAction = async (action: 'generate' | 'validate' | 'submit' | 'approve' | 'revoke') => {
     if (!appId || !planId || !plan) return;
@@ -123,9 +170,12 @@ export const ReliabilityPlan: React.FC = () => {
     );
   }
 
+  const secondaryButton =
+    'inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-[#C9D1D9] bg-transparent border border-[#30363D] rounded-md hover:bg-[#161B22] disabled:opacity-40 disabled:cursor-not-allowed';
+
   return (
     <Layout>
-      <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+      <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-5">
         <PageHeader
           title={plan?.name ?? 'Test plan'}
           description={plan?.description ?? 'Immutable revisions, validation, review and explicit approval.'}
@@ -141,18 +191,28 @@ export const ReliabilityPlan: React.FC = () => {
             <>
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
               <button
                 onClick={() => runAction('generate')}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] disabled:opacity-50"
               >
                 <FlaskConical className="w-3.5 h-3.5" />
                 {busy === 'generate' ? 'Generating…' : 'Generate matrix'}
               </button>
+              <Tooltip content={approveHint} side="bottom">
+                <button
+                  onClick={() => runAction('approve')}
+                  disabled={busy !== null || !canApprove}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#FFFFFF]"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {approvedCurrent ? `Approved v${revision}` : `Approve revision ${revision || 1}`}
+                </button>
+              </Tooltip>
             </>
           }
         />
@@ -162,150 +222,128 @@ export const ReliabilityPlan: React.FC = () => {
           <LoadingState label="Loading test plan…" />
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
-                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+            {/* ------------------------------------------------------ status bar */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 bg-[#000000] border border-[#30363D] rounded-lg text-[11px] text-[#B1BAC4]">
+              <span className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#7D8590]">
                   Plan status
                 </span>
-                <div className="mt-1.5">
-                  <StatusBadge status={plan?.status} />
-                </div>
-              </div>
-              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
-                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+                <StatusBadge status={plan?.status} />
+              </span>
+
+              <span className="hidden sm:block w-px h-3.5 bg-[#30363D]" />
+
+              <span className="flex items-center gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#7D8590]">
                   Current revision
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">
-                  {plan?.current_revision || '—'}
-                </div>
-                <div className="text-[10px] text-[#B1BAC4]">
-                  {plan?.latest_revision
-                    ? formatRelative(plan.latest_revision.created_at)
-                    : 'not generated'}
-                </div>
-              </div>
-              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
-                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+                <span className="font-mono text-[#F0F6FC]">
+                  {plan?.current_revision ? `v${plan.current_revision}` : '—'}
+                </span>
+                <span className="text-[#7D8590]">
+                  {plan?.latest_revision ? `(${formatRelative(plan.latest_revision.created_at)})` : '(not generated)'}
+                </span>
+              </span>
+
+              <span className="hidden sm:block w-px h-3.5 bg-[#30363D]" />
+
+              <span className="flex items-center gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#7D8590]">
                   Approved revision
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">
-                  {plan?.approved_revision ?? 'None'}
-                </div>
-                <div className="text-[10px] text-[#B1BAC4]">
-                  {plan?.approved_at ? formatDateTime(plan.approved_at) : 'not approved'}
-                </div>
-              </div>
-              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
-                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+                <span className="font-mono text-[#F0F6FC]">
+                  {plan?.approved_revision ? `v${plan.approved_revision}` : 'None'}
+                </span>
+                {plan?.approved_at && (
+                  <span className="text-[#7D8590]">({formatDateTime(plan.approved_at)})</span>
+                )}
+              </span>
+
+              <span className="hidden sm:block w-px h-3.5 bg-[#30363D]" />
+
+              <span className="flex items-center gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-[#7D8590]">
                   Test cases
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">{cases.length}</div>
-                <div className="text-[10px] text-[#B1BAC4]">
-                  {cases.filter((item) => item.status === 'READY').length} ready ·{' '}
-                  {cases.filter((item) => item.status !== 'READY').length} blocked
-                </div>
-              </div>
-            </div>
+                <span className="text-[#F0F6FC]">{cases.length} total</span>
+                <span className="text-emerald-400">{readyCount} ready</span>
+                <span className={blockedCount > 0 ? 'text-rose-400' : 'text-[#7D8590]'}>
+                  {blockedCount} blocked
+                </span>
+              </span>
 
-            <SectionCard
-              title="Review and approval"
-              description="Approval is bound to one immutable revision; any later change invalidates it"
-              icon={<ShieldCheck className="w-4 h-4 text-[#C9D1D9]" />}
-            >
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="ml-auto flex flex-wrap items-center gap-1.5">
                 <button
                   onClick={() => runAction('validate')}
                   disabled={busy !== null || !plan?.current_revision}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] disabled:opacity-40"
+                  className={secondaryButton}
                 >
-                  Validate revision
+                  {busy === 'validate' ? 'Validating…' : 'Validate'}
                 </button>
                 <button
                   onClick={() => runAction('submit')}
                   disabled={busy !== null || plan?.status !== 'VALIDATING'}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] disabled:opacity-40"
+                  className={secondaryButton}
                   title="Only VALIDATING plans can be submitted"
                 >
                   Submit for review
                 </button>
                 <button
-                  onClick={() => runAction('approve')}
-                  disabled={busy !== null || plan?.status !== 'READY_FOR_REVIEW'}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg disabled:opacity-40"
-                  title="Only READY_FOR_REVIEW plans can be approved"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Approve revision {plan?.current_revision}
-                </button>
-                <button
                   onClick={() => runAction('revoke')}
                   disabled={busy !== null || !plan?.approved_revision}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#FF7B72] bg-[#000000] border border-[#F85149]/30 rounded-lg hover:bg-[#F85149]/10 disabled:opacity-40"
+                  className={`${secondaryButton} text-rose-400 hover:bg-rose-500/10`}
                 >
-                  <Ban className="w-3.5 h-3.5" /> Revoke approval
+                  <Ban className="w-3 h-3" /> Revoke
                 </button>
               </div>
+            </div>
 
-              <p className="mt-3 text-[11px] text-[#B1BAC4] leading-relaxed">
-                A plan must be generated, validated, submitted and approved before a test case can run.
-                If the configuration changes after approval, the backend clears the approval instead of
-                presenting a stale approved revision.
+            {!runnerEnabled && data && (
+              <p className="text-[11px] text-[#B1BAC4] px-1">
+                The backend reports the runner as disabled, so starting a run is not available.
+                Planning and approval still work.
               </p>
-              {!runnerEnabled && data && (
-                <p className="mt-3 p-3 rounded-lg bg-[#C9D1D9]/25 border border-[#C9D1D9]/60 text-[11px] text-[#C9D1D9] leading-relaxed">
-                  The backend reports the runner as disabled, so starting a run is not available.
-                  Planning and approval still work.
-                </p>
-              )}
+            )}
 
-              {validation && (
-                <div className="mt-4 p-3.5 rounded-lg border border-[#30363D] bg-[#000000] space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold text-[#F0F6FC]">Validation</span>
-                    <Pill tone={validation.ok ? 'sage' : 'rose'}>
-                      {validation.ok ? 'OK' : 'BLOCKING ISSUES'}
-                    </Pill>
-                    <span className="text-[10px] text-[#B1BAC4] font-mono">
-                      revision {validation.revision} · {validation.ready_cases} ready ·{' '}
-                      {validation.blocked_cases} blocked · {validation.total_cases} total
+            {validation && (
+              <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-[#B1BAC4]">
+                <Pill tone={validation.ok ? 'sage' : 'rose'}>
+                  {validation.ok ? 'VALID' : `${validation.blocking_issues.length} BLOCKING`}
+                </Pill>
+                <span className="font-mono text-[10px]">
+                  revision {validation.revision} · {validation.ready_cases} ready ·{' '}
+                  {validation.blocked_cases} blocked · {validation.total_cases} total
+                </span>
+                {validation.drift.length > 0 && (
+                  <Tooltip
+                    side="bottom"
+                    content={<IssueList issues={validation.drift.map((entry) => String(entry.message ?? entry.case_key ?? entry.kind ?? 'drift'))} />}
+                  >
+                    <span className="inline-flex items-center gap-1 text-amber-400">
+                      <AlertTriangle className="w-3 h-3" /> {validation.drift.length} drift
                     </span>
-                  </div>
-                  {validation.blocking_issues.length === 0 && validation.drift.length === 0 && (
-                    <p className="text-[11px] text-[#3e563a]">
-                      Revision matches the current configuration and every case is ready.
-                    </p>
-                  )}
-                  {validation.drift.map((entry, index) => (
-                    <div key={`drift-${index}`} className="text-[11px] text-[#C9D1D9]">
-                      <span className="font-mono text-[10px]">{String(entry.kind ?? 'drift')}: </span>
-                      {String(entry.message ?? entry.case_key ?? '')}
-                    </div>
-                  ))}
-                  {validation.blocking_issues.map((entry, index) => (
-                    <div key={`blocked-${index}`} className="text-[11px] text-[#FF7B72]">
-                      <span className="font-mono text-[10px]">
-                        {String(entry.case_key ?? entry.code ?? 'blocked')}:{' '}
-                      </span>
-                      {String(entry.message ?? entry.status ?? 'blocked case')}
-                    </div>
-                  ))}
-                  {validation.warnings.map((entry, index) => (
-                    <div key={`warning-${index}`} className="text-[11px] text-[#C9D1D9]">
-                      <span className="font-mono text-[10px]">
-                        {String(entry.code ?? 'warning')}:{' '}
-                      </span>
-                      {String(entry.message ?? '')}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
+                  </Tooltip>
+                )}
+                {validation.warnings.length > 0 && (
+                  <Tooltip
+                    side="bottom"
+                    content={<IssueList issues={validation.warnings.map((entry) => String(entry.message ?? entry.code ?? 'warning'))} />}
+                  >
+                    <span className="inline-flex items-center gap-1 text-[#C9D1D9]">
+                      <AlertTriangle className="w-3 h-3" /> {validation.warnings.length} warning
+                      {validation.warnings.length === 1 ? '' : 's'}
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+            )}
 
+            {/* ----------------------------------------------------- test matrix */}
             <SectionCard
-              title="Test matrix"
+              title={`Test Matrix${revision ? ` (Revision ${revision})` : ''}`}
               description={
                 plan?.latest_revision
-                  ? `Revision ${plan.latest_revision.revision} · ${plan.latest_revision.status}`
+                  ? `${cases.length} case${cases.length === 1 ? '' : 's'} frozen for this revision`
                   : 'Generate a matrix to freeze task, scenario and trigger combinations'
               }
               icon={<FlaskConical className="w-4 h-4 text-[#C9D1D9]" />}
@@ -327,87 +365,119 @@ export const ReliabilityPlan: React.FC = () => {
                   />
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
+                <div className="overflow-x-auto max-h-[70vh]">
+                  <table className="w-full text-left text-xs border-separate border-spacing-0">
+                    <thead className="sticky top-0 z-10 bg-[#0B0F14] text-[10px] uppercase tracking-wider text-[#7D8590]">
                       <tr>
-                        <th className="px-5 py-2.5 font-semibold">Case</th>
-                        <th className="px-3 py-2.5 font-semibold">Task</th>
-                        <th className="px-3 py-2.5 font-semibold">Scenario</th>
-                        <th className="px-3 py-2.5 font-semibold">Trigger</th>
-                        <th className="px-3 py-2.5 font-semibold">Status</th>
-                        <th className="px-3 py-2.5 font-semibold">Compatibility</th>
-                        <th className="px-3 py-2.5" />
+                        <th className="px-4 py-2 font-semibold border-b border-[#30363D]">Case</th>
+                        <th className="px-3 py-2 font-semibold border-b border-[#30363D]">Task</th>
+                        <th className="px-3 py-2 font-semibold border-b border-[#30363D]">Scenario</th>
+                        <th className="px-3 py-2 font-semibold border-b border-[#30363D]">Trigger</th>
+                        <th className="px-3 py-2 font-semibold border-b border-[#30363D]">Status</th>
+                        <th className="px-3 py-2 font-semibold border-b border-[#30363D]">Compatibility</th>
+                        <th className="px-4 py-2 font-semibold border-b border-[#30363D] text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#30363D]">
-                      {cases.map((testCase) => (
-                        <tr
-                          key={testCase.id}
-                          className={`hover:bg-[#000000] transition-colors ${
-                            selectedCaseId === testCase.id ? 'bg-[#C9D1D9]/8' : ''
-                          }`}
-                        >
-                          <td className="px-5 py-3">
-                            <button
-                              onClick={() =>
-                                setSelectedCaseId(
-                                  selectedCaseId === testCase.id ? null : testCase.id,
-                                )
-                              }
-                              className="font-mono text-[11px] text-[#F0F6FC] hover:text-[#C9D1D9] underline-offset-2 hover:underline"
-                            >
-                              {testCase.case_key}
-                            </button>
-                            <div className="text-[10px] text-[#B1BAC4] font-mono">
-                              {shortId(testCase.id, 8)}
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 max-w-[200px]">
-                            <span className="font-mono text-[11px] text-[#C9D1D9] block truncate" title={testCase.task_name}>
-                              {testCase.task_name}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3">
-                            <Pill tone="blue">{testCase.scenario_id}</Pill>
-                            <div className="text-[10px] text-[#B1BAC4] font-mono mt-0.5">
-                              v{testCase.scenario_version}
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 text-[11px] text-[#C9D1D9]">
-                            {testCase.trigger_type}
-                            {testCase.checkpoint_name && (
-                              <div className="text-[10px] text-[#B1BAC4] font-mono">
-                                {testCase.checkpoint_name}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-3">
-                            <StatusBadge status={testCase.status} />
-                          </td>
-                          <td className="px-3 py-3">
-                            <CompatibilityBadge status={testCase.compatibility.status} />
-                          </td>
-                          <td className="px-3 py-3 text-right">
-                            {approvedCurrent && runnerEnabled && testCase.status === 'READY' ? (
+                    <tbody>
+                      {cases.map((testCase) => {
+                        const issues = caseIssues.get(testCase.case_key) ?? [];
+                        const blocked = testCase.status !== 'READY';
+                        return (
+                          <tr
+                            key={testCase.id}
+                            className={`transition-colors ${
+                              selectedCaseId === testCase.id
+                                ? 'bg-[#161B22]'
+                                : 'hover:bg-[#161B22]/60'
+                            }`}
+                          >
+                            <td className="px-4 py-2 border-b border-[#30363D]/70">
                               <button
-                                onClick={() => setStartCase(testCase)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg"
+                                onClick={() =>
+                                  setSelectedCaseId(
+                                    selectedCaseId === testCase.id ? null : testCase.id,
+                                  )
+                                }
+                                className="font-mono text-[11px] text-[#F0F6FC] hover:text-[#C9D1D9] underline-offset-2 hover:underline"
                               >
-                                <Play className="w-3 h-3" /> Start
+                                {testCase.case_key}
                               </button>
-                            ) : (
-                              <span className="text-[10px] text-[#B1BAC4]">
-                                {testCase.status !== 'READY'
-                                  ? 'Blocked'
-                                  : !runnerEnabled
-                                    ? 'Runner disabled'
-                                    : 'Approve to run'}
+                              <div className="text-[10px] text-[#7D8590] font-mono">
+                                {shortId(testCase.id, 8)}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 border-b border-[#30363D]/70 max-w-[180px]">
+                              <span
+                                className="font-mono text-[11px] text-[#C9D1D9] block truncate"
+                                title={testCase.task_name}
+                              >
+                                {testCase.task_name}
                               </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="px-3 py-2 border-b border-[#30363D]/70">
+                              <div className="flex items-center gap-1.5">
+                                <Pill tone="muted">{testCase.scenario_id}</Pill>
+                                {(blocked || issues.length > 0) && (
+                                  <Tooltip
+                                    content={
+                                      issues.length > 0 ? (
+                                        <IssueList issues={issues} />
+                                      ) : (
+                                        'Blocked by the backend compatibility check'
+                                      )
+                                    }
+                                  >
+                                    <AlertTriangle className="w-3 h-3 text-rose-400/80 shrink-0" />
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 border-b border-[#30363D]/70 text-[11px] text-[#C9D1D9]">
+                              {testCase.trigger_type}
+                              {testCase.checkpoint_name && (
+                                <span className="text-[10px] text-[#7D8590] font-mono">
+                                  {' '}
+                                  · {testCase.checkpoint_name}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 border-b border-[#30363D]/70">
+                              <StatusBadge status={testCase.status} />
+                            </td>
+                            <td className="px-3 py-2 border-b border-[#30363D]/70">
+                              <CompatibilityBadge status={testCase.compatibility.status} />
+                            </td>
+                            <td className="px-4 py-2 border-b border-[#30363D]/70 text-right whitespace-nowrap">
+                              {blocked ? (
+                                <Tooltip content={issues.length > 0 ? <IssueList issues={issues} /> : approveHint}>
+                                  <span className="text-[10px] font-medium text-rose-400/70 cursor-help">
+                                    Blocked
+                                  </span>
+                                </Tooltip>
+                              ) : approvedCurrent && runnerEnabled ? (
+                                <button
+                                  onClick={() => setStartCase(testCase)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-md"
+                                >
+                                  <Play className="w-3 h-3" /> Run
+                                </button>
+                              ) : (
+                                <Tooltip
+                                  content={
+                                    !runnerEnabled
+                                      ? 'The backend reports the runner as disabled'
+                                      : approveHint
+                                  }
+                                >
+                                  <span className="text-[10px] text-[#7D8590] cursor-help">
+                                    {!runnerEnabled ? 'Runner disabled' : 'Approve to run'}
+                                  </span>
+                                </Tooltip>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -444,7 +514,7 @@ export const ReliabilityPlan: React.FC = () => {
                             <li
                               key={`${reason.code}-${reason.message}`}
                               className={`text-[11px] leading-relaxed ${
-                                reason.severity === 'warning' ? 'text-[#C9D1D9]' : 'text-[#FF7B72]'
+                                reason.severity === 'warning' ? 'text-[#C9D1D9]' : 'text-rose-400'
                               }`}
                             >
                               <span className="font-mono text-[10px]">{reason.code}: </span>
@@ -458,7 +528,7 @@ export const ReliabilityPlan: React.FC = () => {
                           reason.code === 'HTTP_DEPENDENCY_URL_MISSING' ||
                           reason.code === 'HTTP_DEPENDENCY_URL_INVALID',
                       ) && (
-                        <p className="mt-2 text-[11px] text-[#E3B341] leading-relaxed">
+                        <p className="mt-2 text-[11px] text-amber-400 leading-relaxed">
                           This case is blocked because the HTTP fault proxy has no upstream
                           dependency. Open the task from Reliability planning, set the upstream
                           dependency URL on the '{selectedCase.scenario_id}' scenario, save it,
@@ -538,28 +608,23 @@ export const ReliabilityPlan: React.FC = () => {
               bodyClassName="p-0"
             >
               {(data?.runs.length ?? 0) === 0 ? (
-                <div className="p-5">
-                  <EmptyState
-                    icon={<Play className="w-5 h-5" />}
-                    title="No runs yet"
-                    description={
-                      approvedCurrent
-                        ? 'Approve is recorded. Start a READY test case above to execute it in isolation.'
-                        : 'Generate, validate and approve the current revision to unlock the Start action.'
-                    }
-                  />
-                </div>
+                <p className="px-5 py-4 text-[11px] text-[#B1BAC4]">
+                  No runs yet.{' '}
+                  {approvedCurrent
+                    ? 'Start a ready case above.'
+                    : 'Approve the revision to start.'}
+                </p>
               ) : (
                 <div className="divide-y divide-[#30363D]">
                   {data?.runs.map((run) => (
                     <Link
                       key={run.id}
                       to={`/applications/${appId}/reliability/runs/${run.id}`}
-                      className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-[#000000]"
+                      className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 hover:bg-[#161B22]/60"
                     >
                       <div className="min-w-0">
                         <div className="text-xs font-mono text-[#F0F6FC] truncate">{run.case_key}</div>
-                        <div className="text-[10px] text-[#B1BAC4]">
+                        <div className="text-[10px] text-[#7D8590]">
                           {shortId(run.id, 10)} · {run.scenario_id} · {formatDateTime(run.created_at)}
                         </div>
                       </div>
@@ -572,17 +637,6 @@ export const ReliabilityPlan: React.FC = () => {
                 </div>
               )}
             </SectionCard>
-
-            {plan?.latest_revision && (
-              <div className="text-[11px] text-[#B1BAC4] flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  Matrix summary: {prettyJson(plan.latest_revision.summary ?? {}) || '—'}
-                </span>
-                <span className="font-mono">
-                  revision id {shortId(plan.latest_revision.id, 10)}
-                </span>
-              </div>
-            )}
           </>
         )}
       </div>
