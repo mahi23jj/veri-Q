@@ -14,12 +14,26 @@ longer compatible is emitted as BLOCKED with its reasons.
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.domain.compatibility.engine import (
+    SEVERITY_CONFIGURATION,
+    SEVERITY_WARNING,
+    STATUS_NEEDS_CONFIGURATION,
+    CompatibilityResult,
+    Reason,
+)
+from app.domain.runtime.dependencies import (
+    HTTP_PROXY_SCENARIOS,
+    PROXY_NOT_ROUTED,
+    dependency_issue,
+    proxy_routes_requests,
+)
 from app.domain.planning.matrix import (
     EvaluatedCombination,
     MatrixResult,
@@ -44,6 +58,60 @@ def _adapter_refs(result) -> tuple[dict, ...]:
     return tuple(refs)
 
 
+def _with_dependency_preflight(
+    result: CompatibilityResult,
+    *,
+    scenario_id: str,
+    scenario_config: dict[str, Any],
+    safe_input: dict[str, Any],
+    runtime_profile: dict[str, Any],
+) -> CompatibilityResult:
+    """Block an HTTP-proxy case when no upstream dependency can be resolved.
+
+    The fault proxy is a real hop, so a case without an upstream could never
+    activate its fault. Blocking it at generation keeps approval honest instead
+    of surfacing the problem as a failed run.
+    """
+    if scenario_id not in HTTP_PROXY_SCENARIOS:
+        return result
+    configuration = {"test_input": safe_input, "scenario_config": scenario_config}
+    issue = dependency_issue(configuration, runtime_profile)
+    if issue is not None:
+        return replace(
+        result,
+        status=STATUS_NEEDS_CONFIGURATION,
+        reasons=result.reasons
+        + (
+            Reason(
+                code=str(issue["code"]),
+                severity=SEVERITY_CONFIGURATION,
+                message=str(issue["message"]),
+                field=issue.get("field"),
+            ),
+        ),
+    )
+    if proxy_routes_requests(configuration, runtime_profile):
+        return result
+    return replace(
+        result,
+        reasons=result.reasons
+        + (
+            Reason(
+                code=PROXY_NOT_ROUTED,
+                severity=SEVERITY_WARNING,
+                message=(
+                    "The fault proxy has an upstream URL, but nothing points the "
+                    "task at it: add the dependency's absolute URL to the contract "
+                    "safe input (or an http runtime profile input_field/url_env). "
+                    "Otherwise the task calls the real dependency and the fault "
+                    "never activates."
+                ),
+                field="contract.safe_input",
+            ),
+        ),
+    )
+
+
 def build_matrix(
     db: Session, target_app: TargetApp, task_ids: Sequence[uuid.UUID]
 ) -> tuple[MatrixResult, dict[str, Any]]:
@@ -53,6 +121,7 @@ def build_matrix(
     ]
     tasks.sort(key=lambda task: task.task_name)
     adapters = compatibility_service.adapter_views(db, target_app.id)
+    runtime_profile = dict(target_app.runtime_config or {})
 
     combinations: list[EvaluatedCombination] = []
     selection_snapshot: list[dict[str, Any]] = []
@@ -109,7 +178,18 @@ def build_matrix(
                 adapters=adapters,
             )
             stored = automatic_rows.get(scenario.id)
-            enabled = stored.enabled if stored is not None else result.compatible
+            scenario_config = dict(stored.config or {}) if stored is not None else {}
+            recommended = result.compatible
+            # A recommended scenario with no usable upstream stays selected (so
+            # the developer sees it) but is emitted as BLOCKED.
+            result = _with_dependency_preflight(
+                result,
+                scenario_id=scenario.id,
+                scenario_config=scenario_config,
+                safe_input=dict((contract_payload or {}).get("safe_input") or {}),
+                runtime_profile=runtime_profile,
+            )
+            enabled = stored.enabled if stored is not None else recommended
             task_snapshot["automatic_scenarios"].append(
                 {
                     "scenario_id": scenario.id,
@@ -117,7 +197,7 @@ def build_matrix(
                     "enabled": enabled,
                     "explicitly_configured": stored is not None,
                     "config": stored.config if stored is not None else None,
-                    "recommended_by_default": result.compatible,
+                    "recommended_by_default": recommended,
                 }
             )
             if not enabled:
@@ -142,7 +222,7 @@ def build_matrix(
                     cleanup=dict((contract_payload or {}).get("cleanup") or {}),
                     adapter_refs=_adapter_refs(result),
                     compatibility=result,
-                    scenario_config=dict(stored.config or {}) if stored is not None else {},
+                    scenario_config=scenario_config,
                     recovery_policy=recovery_policy,
                 )
             )
@@ -167,6 +247,14 @@ def build_matrix(
                     checkpoint=checkpoint,
                     contract=contract,
                     adapters=adapters,
+                )
+                scenario_config = dict(stored.config or {}) if stored is not None else {}
+                result = _with_dependency_preflight(
+                    result,
+                    scenario_id=scenario.id,
+                    scenario_config=scenario_config,
+                    safe_input=dict((contract_payload or {}).get("safe_input") or {}),
+                    runtime_profile=runtime_profile,
                 )
                 checkpoint_snapshot["scenarios"].append(
                     {
@@ -206,7 +294,7 @@ def build_matrix(
                         cleanup=dict((contract_payload or {}).get("cleanup") or {}),
                         adapter_refs=_adapter_refs(result),
                         compatibility=result,
-                        scenario_config=dict(stored.config or {}) if stored is not None else {},
+                        scenario_config=scenario_config,
                         recovery_policy=recovery_policy,
                     )
                 )

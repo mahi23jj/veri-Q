@@ -47,7 +47,15 @@ def _full_setup(client: TestClient, name: str, *, contract: bool = True):
             client,
             app_id,
             task["id"],
-            contract_body(measurement_adapter_id=db_adapter["id"]),
+            contract_body(
+                measurement_adapter_id=db_adapter["id"],
+                # HTTP failure scenarios need a dependency the fault proxy can
+                # forward to; the safe input carries the sandbox endpoint.
+                safe_input={
+                    "document_id": "test-document-001",
+                    "url": "https://sandbox.example/quote",
+                },
+            ),
         )
     for checkpoint in (
         "after_download",
@@ -99,7 +107,10 @@ def test_matrix_contains_one_case_per_selected_combination(client: TestClient):
 
     case = next(c for c in automatic if c["scenario_id"] == "dependency_timeout")
     assert case["contract_version"] == 1
-    assert case["test_input"] == {"document_id": "test-document-001"}
+    assert case["test_input"] == {
+        "document_id": "test-document-001",
+        "url": "https://sandbox.example/quote",
+    }
     assert case["adapter_refs"]
     assert case["configuration_fingerprint"]
     assert case["compatibility"]["status"] == "COMPATIBLE"
@@ -369,6 +380,96 @@ def test_empty_plan_cannot_be_submitted(client: TestClient):
         f"/api/v1/applications/{app_id}/test-plans/{plan['id']}/validate"
     ).json()
     assert validation["ok"] is False
+
+
+def test_dependency_scenario_without_an_upstream_is_blocked(client: TestClient):
+    """No upstream URL means the fault proxy could never activate the fault."""
+    setup = _full_setup(client, "dep-blocked")
+    app_id, task = setup["app_id"], setup["task"]
+    contract = client.get(
+        f"/api/v1/applications/{app_id}/registered-tasks/{task['id']}/contract"
+    ).json()
+    client.patch(
+        f"/api/v1/applications/{app_id}/contracts/{contract['id']}",
+        json=contract_body(
+            measurement_adapter_id=setup["db"]["id"],
+            safe_input={"document_id": "test-document-001"},
+        ),
+    )
+
+    plan = create_plan(client, app_id, "dependency blocked", [task["id"]])
+    generated = generate_plan(client, app_id, plan["id"])
+    assert generated["plan"]["status"] == "NEEDS_CHANGES"
+
+    cases = plan_cases(client, app_id, plan["id"], 1)
+    dependency_cases = [
+        case
+        for case in cases
+        if case["scenario_id"]
+        in ("dependency_timeout", "successful_operation_lost_response")
+    ]
+    assert dependency_cases
+    for case in dependency_cases:
+        assert case["status"] == "BLOCKED"
+        assert "HTTP_DEPENDENCY_URL_MISSING" in {
+            reason["code"] for reason in case["compatibility"]["reasons"]
+        }
+    # Scenarios that need no upstream are unaffected.
+    assert any(case["status"] == "READY" for case in cases)
+
+    blocked = client.post(
+        f"/api/v1/applications/{app_id}/test-plans/{plan['id']}/submit"
+    )
+    assert blocked.status_code == 409
+
+
+def test_dependency_scenario_warns_when_nothing_points_the_task_at_the_proxy(
+    client: TestClient,
+):
+    """A configured upstream is not enough: the task's request must be routed."""
+    setup = _full_setup(client, "dep-not-routed")
+    app_id, task = setup["app_id"], setup["task"]
+    contract = client.get(
+        f"/api/v1/applications/{app_id}/registered-tasks/{task['id']}/contract"
+    ).json()
+    client.patch(
+        f"/api/v1/applications/{app_id}/contracts/{contract['id']}",
+        json=contract_body(
+            measurement_adapter_id=setup["db"]["id"],
+            safe_input={"document_id": "test-document-001"},
+        ),
+    )
+    client.put(
+        f"/api/v1/applications/{app_id}/registered-tasks/{task['id']}/scenarios/dependency_timeout",
+        json={
+            "enabled": True,
+            "config": {"dependency_url": "https://sandbox.example/quote"},
+        },
+    )
+
+    plan = create_plan(client, app_id, "dependency not routed", [task["id"]])
+    generate_plan(client, app_id, plan["id"])
+    case = next(
+        c
+        for c in plan_cases(client, app_id, plan["id"], 1)
+        if c["scenario_id"] == "dependency_timeout"
+    )
+    assert case["status"] == "READY"
+    assert "HTTP_PROXY_NOT_ROUTED" in {
+        warning["code"] for warning in case["compatibility"]["warnings"]
+    }
+
+
+def test_scenario_configuration_rejects_a_relative_dependency_url(client: TestClient):
+    setup = _full_setup(client, "dep-invalid-url")
+    app_id, task = setup["app_id"], setup["task"]
+
+    rejected = client.put(
+        f"/api/v1/applications/{app_id}/registered-tasks/{task['id']}/scenarios/dependency_timeout",
+        json={"enabled": True, "config": {"dependency_url": "sandbox.example/quote"}},
+    )
+    assert rejected.status_code == 422, rejected.text
+    assert "absolute http(s) URL" in rejected.text
 
 
 def test_disabled_automatic_scenario_is_not_generated(client: TestClient):

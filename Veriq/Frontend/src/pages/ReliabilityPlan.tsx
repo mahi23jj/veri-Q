@@ -453,6 +453,18 @@ export const ReliabilityPlan: React.FC = () => {
                           ))}
                         </ul>
                       )}
+                      {selectedCase.compatibility.reasons.some(
+                        (reason) =>
+                          reason.code === 'HTTP_DEPENDENCY_URL_MISSING' ||
+                          reason.code === 'HTTP_DEPENDENCY_URL_INVALID',
+                      ) && (
+                        <p className="mt-2 text-[11px] text-[#E3B341] leading-relaxed">
+                          This case is blocked because the HTTP fault proxy has no upstream
+                          dependency. Open the task from Reliability planning, set the upstream
+                          dependency URL on the '{selectedCase.scenario_id}' scenario, save it,
+                          then regenerate this plan revision.
+                        </p>
+                      )}
                     </div>
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">

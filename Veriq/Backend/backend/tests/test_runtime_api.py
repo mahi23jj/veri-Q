@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 import app.api.routes.runtime as runtime_routes
+from app.domain.runtime.dependencies import dependency_issue
 from app.models.runtime import RunnerCredential
 from app.services import runtime_service
 from tests import planning_helpers as ph
@@ -24,6 +25,65 @@ from tests.runtime_helpers import (
 
 def _run_url(app_id: str, run_id) -> str:
     return f"/api/v1/applications/{app_id}/test-runs/{run_id}"
+
+
+def test_http_dependency_url_is_resolved_from_contract_when_profile_field_is_missing():
+    configuration = {
+        "test_input": {
+            "request": {"endpoint": "https://example.com/api/quote"},
+        },
+        "scenario_config": {},
+    }
+
+    upstream = runtime_service.dependency_upstream(
+        configuration,
+        {"http": {"advertised_host": "127.0.0.1"}},
+    )
+    rewritten = runtime_service.input_with_proxy(
+        configuration,
+        {"http": {"advertised_host": "127.0.0.1"}},
+        "http://127.0.0.1:43127",
+    )
+
+    assert upstream == "https://example.com/api/quote"
+    assert rewritten["request"]["endpoint"] == "http://127.0.0.1:43127/api/quote"
+
+
+def test_dependency_issue_reports_missing_and_invalid_upstreams():
+    missing = dependency_issue(
+        {"test_input": {"order_id": "1"}, "scenario_config": {}}, {}
+    )
+    assert missing is not None and missing["code"] == "HTTP_DEPENDENCY_URL_MISSING"
+
+    invalid = dependency_issue(
+        {"scenario_config": {"dependency_url": "sandbox.example/quote"}}, {}
+    )
+    assert invalid is not None and invalid["code"] == "HTTP_DEPENDENCY_URL_INVALID"
+
+    assert (
+        dependency_issue(
+            {"test_input": {"url": "https://sandbox.example/quote"}}, {}
+        )
+        is None
+    )
+    assert (
+        dependency_issue(
+            {"scenario_config": {"dependency_url": "https://sandbox.example/quote"}}, {}
+        )
+        is None
+    )
+
+
+def test_http_dependency_url_prefers_explicit_scenario_configuration():
+    upstream = runtime_service.dependency_upstream(
+        {
+            "test_input": {"url": "https://contract.example/quote"},
+            "scenario_config": {"dependency_url": "https://sandbox.example/quote"},
+        },
+        {},
+    )
+
+    assert upstream == "https://sandbox.example/quote"
 
 
 def test_runtime_profile_round_trip_and_validation(client: TestClient):

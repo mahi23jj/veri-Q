@@ -26,6 +26,11 @@ def _check_value(key: str, spec: dict, value: Any) -> str | None:
             return f"'{key}' must be a string"
         if "maxLength" in spec and len(value) > int(spec["maxLength"]):
             return f"'{key}' must be at most {spec['maxLength']} characters"
+        if spec.get("format") == "uri":
+            from app.domain.runtime.dependencies import is_http_url
+
+            if not is_http_url(value):
+                return f"'{key}' must be an absolute http(s) URL"
     if "minimum" in spec and isinstance(value, (int, float)) and not isinstance(value, bool):
         if value < spec["minimum"]:
             return f"'{key}' must be >= {spec['minimum']}"

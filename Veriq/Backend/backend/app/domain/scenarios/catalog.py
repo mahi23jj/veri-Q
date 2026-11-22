@@ -128,7 +128,16 @@ _DEPENDENCY_TIMEOUT = ScenarioDefinition(
         "type": "object",
         "properties": {
             "timeout_ms": {"type": "integer", "minimum": 1, "maximum": 600000},
-            "dependency_url": {"type": "string", "maxLength": 500},
+            "dependency_url": {
+                "type": "string",
+                "maxLength": 500,
+                "format": "uri",
+                "description": (
+                    "Absolute http(s) URL of the dependency the fault proxy forwards "
+                    "to. Required unless the runtime profile or safe input provides "
+                    "one."
+                ),
+            },
         },
         "additionalProperties": False,
     },
@@ -181,7 +190,16 @@ _LOST_RESPONSE = ScenarioDefinition(
         "type": "object",
         "properties": {
             "commit_then_drop_response": {"type": "boolean"},
-            "dependency_url": {"type": "string", "maxLength": 500},
+            "dependency_url": {
+                "type": "string",
+                "maxLength": 500,
+                "format": "uri",
+                "description": (
+                    "Absolute http(s) URL of the dependency the fault proxy forwards "
+                    "to. Required unless the runtime profile or safe input provides "
+                    "one."
+                ),
+            },
         },
         "additionalProperties": False,
     },

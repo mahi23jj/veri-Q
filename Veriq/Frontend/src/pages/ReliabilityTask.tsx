@@ -35,6 +35,30 @@ import { CompatibilityBadge } from '../components/reliability';
 import { formatRelative } from '../lib/format';
 import { parseJsonArray, parseJsonObject, prettyJson } from '../lib/json';
 
+const scenarioConfigProperties = (
+  definition: ScenarioDefinition | undefined,
+): Record<string, unknown> | null => {
+  const schema = definition?.configuration_schema as
+    | { properties?: Record<string, unknown> }
+    | undefined;
+  return schema?.properties ?? null;
+};
+
+/** The HTTP fault proxy scenarios declare 'dependency_url' in their schema. */
+const supportsDependencyUrl = (definition: ScenarioDefinition | undefined): boolean => {
+  const properties = scenarioConfigProperties(definition);
+  return !!properties && Object.prototype.hasOwnProperty.call(properties, 'dependency_url');
+};
+
+const isAbsoluteHttpUrl = (value: string): boolean => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 const DEFAULT_RECOVERY: RecoveryPolicy = {
   max_attempts: 3,
   per_attempt_timeout_seconds: 60,
@@ -397,6 +421,11 @@ export const ReliabilityTask: React.FC = () => {
                       className="mt-1 w-full px-3 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       placeholder='{"order_id": "test-order-1"}'
                     />
+                    <span className="mt-1 block text-[10px] text-[#B1BAC4] leading-relaxed">
+                      Dependency scenarios (dependency timeout, lost response) also need an
+                      absolute http(s) URL here, or an upstream URL on the scenario
+                      configuration, for the fault proxy to forward to.
+                    </span>
                   </label>
                   <label className="block">
                     <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
@@ -727,20 +756,52 @@ const ScenarioRowWithSave: React.FC<{
 }> = ({ item, definition, onSave, onSaved }) => {
   const [enabled, setEnabled] = useState(item.enabled);
   const [config, setConfig] = useState(prettyJson(item.config ?? {}));
+  const [dependencyUrl, setDependencyUrl] = useState(
+    typeof item.config?.dependency_url === 'string' ? item.config.dependency_url : '',
+  );
+  const [configError, setConfigError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const needsDependencyUrl = supportsDependencyUrl(definition);
+  const savedConfig = prettyJson(item.config ?? {});
+  const savedDependencyUrl =
+    typeof item.config?.dependency_url === 'string' ? item.config.dependency_url : '';
 
   useEffect(() => {
     setEnabled(item.enabled);
     setConfig(prettyJson(item.config ?? {}));
+    setDependencyUrl(
+      typeof item.config?.dependency_url === 'string' ? item.config.dependency_url : '',
+    );
+    setConfigError(null);
   }, [item.enabled, item.config]);
 
-  const dirty = enabled !== item.enabled || config !== prettyJson(item.config ?? {});
+  const dirty =
+    enabled !== item.enabled ||
+    config !== savedConfig ||
+    dependencyUrl !== savedDependencyUrl;
   const blocked = item.compatibility.status === 'UNSUPPORTED';
 
   const save = async () => {
+    const parsed = parseJsonObject(config);
+    if (parsed.error || parsed.value === null) {
+      setConfigError(`Scenario configuration: ${parsed.error ?? 'invalid object'}`);
+      return;
+    }
+    const merged: Record<string, unknown> = { ...parsed.value };
+    if (needsDependencyUrl) {
+      const trimmed = dependencyUrl.trim();
+      if (trimmed && !isAbsoluteHttpUrl(trimmed)) {
+        setConfigError('Upstream dependency URL must be an absolute http(s) URL');
+        return;
+      }
+      if (trimmed) merged.dependency_url = trimmed;
+      else delete merged.dependency_url;
+    }
+    setConfigError(null);
     setBusy(true);
     try {
-      await onSave(item.scenario_id, enabled, config);
+      await onSave(item.scenario_id, enabled, JSON.stringify(merged, null, 2));
       toast.success(`Scenario "${item.name}" saved`);
       onSaved();
     } catch (cause) {
@@ -846,6 +907,25 @@ const ScenarioRowWithSave: React.FC<{
           : 'not described by the backend'}
       </div>
 
+      {needsDependencyUrl && (
+        <label className="block">
+          <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+            Upstream dependency URL (required by the fault proxy)
+          </span>
+          <input
+            value={dependencyUrl}
+            onChange={(event) => setDependencyUrl(event.target.value)}
+            placeholder="https://sandbox.example/quote"
+            className="mt-1 w-full px-2.5 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
+          />
+          <span className="mt-1 block text-[10px] text-[#B1BAC4] leading-relaxed">
+            The proxy forwards the task's requests to this URL and rewrites the matching
+            absolute URL in the safe input. Without it the generated case is blocked before
+            approval. Saved as <span className="font-mono">scenario_config.dependency_url</span>.
+          </span>
+        </label>
+      )}
+
       <label className="block">
         <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
           Scenario configuration (JSON)
@@ -857,6 +937,8 @@ const ScenarioRowWithSave: React.FC<{
           className="mt-1 w-full px-2.5 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
         />
       </label>
+
+      {configError && <p className="text-[11px] text-[#FF7B72]">{configError}</p>}
 
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] text-[#B1BAC4]">

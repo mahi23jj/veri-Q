@@ -21,6 +21,13 @@ from app.core.config import settings
 from app.core.security import hash_api_key
 from app.domain.runtime.recovery import RecoveryPolicy
 from app.domain.runtime.lifecycle import assert_transition
+from app.domain.runtime.dependencies import (
+    dependency_issue,
+    dependency_upstream,
+    is_http_url,
+    proxy_url,
+    rewrite_http_urls,
+)
 from app.domain.scenarios.catalog import SCENARIO_CATALOG_VERSION
 from app.models import (
     FaultEvent,
@@ -337,6 +344,11 @@ def start_case_run(
 
     profile = validate_runtime_profile(target_app.runtime_config)
     configuration = _case_configuration(case=case, plan=plan, revision=revision, task=task)
+    # Refuse before a run row exists: an unrunnable dependency configuration must
+    # be fixed in planning, not discovered as a failed run afterwards.
+    dependency_problem = dependency_issue(configuration, profile)
+    if dependency_problem is not None:
+        raise RunNotExecutableError([dependency_problem])
     policy = _policy_for(db, case, configuration)
 
     run = TestCaseRun(
@@ -454,6 +466,10 @@ def validate_executable(db: Session, run: TestCaseRun) -> ExecutableCase:
         for message in exc.issues:
             issues.append(_issue("RUNTIME_PROFILE_INVALID", message))
         profile = {}
+
+    dependency_problem = dependency_issue(run.configuration or {}, profile)
+    if dependency_problem is not None:
+        issues.append(dependency_problem)
 
     if issues:
         raise RunNotExecutableError(issues)
@@ -579,26 +595,10 @@ def input_with_proxy(
     http_profile = profile.get("http") if isinstance(profile.get("http"), dict) else {}
     field = http_profile.get("input_field")
     if field and field in payload and isinstance(payload[field], str):
-        original = payload[field]
-        suffix = ""
-        if "://" in original:
-            from urllib.parse import urlsplit
-
-            parts = urlsplit(original)
-            suffix = parts.path or ""
-            if parts.query:
-                suffix += "?" + parts.query
-        payload[field] = f"{proxy_origin}{suffix}"
+        payload[field] = proxy_url(payload[field], proxy_origin)
+    else:
+        payload = rewrite_http_urls(payload, proxy_origin)
     return payload
-
-
-def dependency_upstream(configuration: dict[str, Any], profile: dict[str, Any]) -> str | None:
-    http_profile = profile.get("http") if isinstance(profile.get("http"), dict) else {}
-    if http_profile.get("upstream_url"):
-        return str(http_profile["upstream_url"])
-    field = http_profile.get("input_field")
-    value = (configuration.get("test_input") or {}).get(field) if field else None
-    return str(value) if isinstance(value, str) else None
 
 
 # ---------------------------------------------------------------------------
