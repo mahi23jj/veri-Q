@@ -447,6 +447,51 @@ def test_engine_prioritises_unsupported_over_configuration():
     assert codes[0] == "TRIGGER_MODE_UNSUPPORTED"
 
 
+def test_engine_selects_a_validated_adapter_that_enables_the_required_trigger():
+    scenario = get_scenario("dependency_timeout")
+    assert scenario is not None
+    adapters = [
+        AdapterView(
+            id="a-adapter",
+            name="http-no-trigger",
+            adapter_type="http",
+            category="http",
+            capabilities=frozenset({"failure_trigger"}),
+            enabled_triggers=frozenset(),
+            status="VALIDATED",
+        ),
+        AdapterView(
+            id="b-adapter",
+            name="http-with-trigger",
+            adapter_type="http",
+            category="http",
+            capabilities=frozenset({"failure_trigger"}),
+            enabled_triggers=frozenset({"timeout_simulation"}),
+            status="VALIDATED",
+        ),
+    ]
+    contract = _contract(
+        {
+            "safe_input": {"document_id": "test-document-001"},
+            "assertions": [{"id": "ok", "type": "execution_status", "expected": "FAILED"}],
+            "effect_measurements": [],
+            "cleanup": {"mode": "none"},
+        }
+    )
+
+    result = evaluate(
+        task=TaskView(id="t1", task_name="app.tasks.anything"),
+        scenario=scenario,
+        trigger_type="automatic",
+        checkpoint=None,
+        contract=contract,
+        adapters=adapters,
+    )
+
+    assert result.status == "COMPATIBLE"
+    assert result.selected_adapters[0]["adapter_id"] == "b-adapter"
+
+
 def test_engine_is_order_stable_for_adapters():
     scenario = get_scenario("dependency_timeout")
     assert scenario is not None

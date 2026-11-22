@@ -17,6 +17,21 @@ afterEach(() => {
 });
 
 describe('api service', () => {
+  it('updates adapter enabled triggers with PATCH', async () => {
+    const fetchMock = stubFetch({ id: 'adapter-1', enabled_triggers: ['timeout'] });
+
+    await api.updateAdapter('app-1', 'adapter-1', {
+      enabled_triggers: ['timeout'],
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${API_ROOT}/applications/app-1/adapters/adapter-1`);
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(String(init.body))).toEqual({
+      enabled_triggers: ['timeout'],
+    });
+  });
+
   it('reads the runtime profile from the application endpoint', async () => {
     const fetchMock = stubFetch({ target_app_id: 'app-1', runtime_config: null });
     const result = await api.getRuntimeProfile('app-1');

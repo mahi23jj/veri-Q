@@ -209,7 +209,17 @@ def _adapter_for(
         )
         return None, reasons
 
-    chosen = sorted(validated, key=lambda adapter: adapter.id)[0]
+    if trigger is not None:
+        trigger_ready = [
+            adapter for adapter in validated if trigger in adapter.enabled_triggers
+        ]
+        if trigger_ready:
+            chosen = sorted(trigger_ready, key=lambda adapter: adapter.id)[0]
+        else:
+            chosen = sorted(validated, key=lambda adapter: adapter.id)[0]
+    else:
+        chosen = sorted(validated, key=lambda adapter: adapter.id)[0]
+
     if trigger is not None and trigger not in chosen.enabled_triggers:
         reasons.append(
             Reason(

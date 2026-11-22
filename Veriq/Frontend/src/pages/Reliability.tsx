@@ -114,6 +114,8 @@ export const Reliability: React.FC = () => {
   const [adapterConfigRef, setAdapterConfigRef] = useState('');
   const [savingAdapter, setSavingAdapter] = useState(false);
   const [busyAdapterId, setBusyAdapterId] = useState<string | null>(null);
+  const [editingAdapterId, setEditingAdapterId] = useState<string | null>(null);
+  const [editAdapterTriggers, setEditAdapterTriggers] = useState<string[]>([]);
 
   const selectedAdapterType = data?.adapterTypes.find((type) => type.slug === adapterTypeSlug);
 
@@ -146,6 +148,33 @@ export const Reliability: React.FC = () => {
       toast.error(cause instanceof Error ? cause.message : 'Could not configure adapter');
     } finally {
       setSavingAdapter(false);
+    }
+  };
+
+  const startEditingAdapter = (adapter: ApplicationAdapter) => {
+    setEditingAdapterId(adapter.id);
+    setEditAdapterTriggers([...adapter.enabled_triggers]);
+  };
+
+  const cancelEditingAdapter = () => {
+    setEditingAdapterId(null);
+    setEditAdapterTriggers([]);
+  };
+
+  const updateAdapter = async (adapter: ApplicationAdapter) => {
+    if (!appId) return;
+    setBusyAdapterId(adapter.id);
+    try {
+      await api.updateAdapter(appId, adapter.id, {
+        enabled_triggers: editAdapterTriggers,
+      });
+      toast.info(`Adapter "${adapter.name}" updated. Click Validate again.`);
+      cancelEditingAdapter();
+      reload();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Could not update adapter');
+    } finally {
+      setBusyAdapterId(null);
     }
   };
 
@@ -578,6 +607,17 @@ export const Reliability: React.FC = () => {
                           <div className="flex items-center gap-1.5">
                             <StatusBadge status={adapter.status} />
                             <button
+                              onClick={() =>
+                                editingAdapterId === adapter.id
+                                  ? cancelEditingAdapter()
+                                  : startEditingAdapter(adapter)
+                              }
+                              disabled={busyAdapterId === adapter.id}
+                              className="px-2 py-1 text-[10px] font-medium rounded border border-[#30363D] bg-[#000000] text-[#C9D1D9] hover:bg-[#161B22] disabled:opacity-50"
+                            >
+                              {editingAdapterId === adapter.id ? 'Cancel' : 'Edit'}
+                            </button>
+                            <button
                               onClick={() => runAdapterAction(adapter, 'validate')}
                               disabled={busyAdapterId === adapter.id}
                               className="px-2 py-1 text-[10px] font-medium rounded border border-[#30363D] bg-[#000000] text-[#C9D1D9] hover:bg-[#161B22] disabled:opacity-50"
@@ -604,6 +644,64 @@ export const Reliability: React.FC = () => {
                         <div className="text-[10px] text-[#B1BAC4] font-mono">
                           triggers: {adapter.enabled_triggers.length > 0 ? adapter.enabled_triggers.join(', ') : 'none'}
                         </div>
+                        {adapter.status === 'CONFIGURED' && (
+                          <div className="text-[10px] text-[#E3B341]">
+                            Validation is required after updates. Click Validate again.
+                          </div>
+                        )}
+                        {editingAdapterId === adapter.id && (() => {
+                          const adapterType = data?.adapterTypes.find(
+                            (type) => type.slug === adapter.adapter_type,
+                          );
+                          return (
+                            <div className="mt-2 p-3 rounded-lg border border-[#30363D] bg-[#0D1117] space-y-2">
+                              <div className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+                                Supported triggers
+                              </div>
+                              {adapterType?.supported_triggers.length ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {adapterType.supported_triggers.map((trigger) => {
+                                    const selected = editAdapterTriggers.includes(trigger);
+                                    return (
+                                      <button
+                                        key={trigger}
+                                        type="button"
+                                        onClick={() =>
+                                          setEditAdapterTriggers((current) =>
+                                            selected
+                                              ? current.filter((value) => value !== trigger)
+                                              : [...current, trigger],
+                                          )
+                                        }
+                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-[10px] font-mono ${
+                                          selected
+                                            ? 'bg-[#C9D1D9]/15 border-[#C9D1D9]/40 text-[#3e563a]'
+                                            : 'bg-[#000000] border-[#30363D] text-[#B1BAC4]'
+                                        }`}
+                                      >
+                                        {selected && <Check className="w-3 h-3" />}
+                                        {trigger}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="text-[11px] text-[#B1BAC4]">
+                                  This adapter type declares no supported triggers.
+                                </div>
+                              )}
+                              <div className="flex justify-end">
+                                <button
+                                  onClick={() => updateAdapter(adapter)}
+                                  disabled={busyAdapterId === adapter.id}
+                                  className="px-3 py-1.5 text-[10px] font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded disabled:opacity-60"
+                                >
+                                  {busyAdapterId === adapter.id ? 'Saving…' : 'Save changes'}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
