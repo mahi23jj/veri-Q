@@ -4,6 +4,8 @@ import { toast } from 'react-toastify';
 import {
   AlertTriangle,
   ArrowLeft,
+  Braces,
+  ChevronDown,
   FileJson,
   Flag,
   ListChecks,
@@ -108,6 +110,7 @@ export const ReliabilityTask: React.FC = () => {
 
   const [evaluation, setEvaluation] = useState<CompatibilityEvaluation[] | null>(null);
   const [evaluating, setEvaluating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'scenarios' | 'contract'>('scenarios');
 
   const evaluateSelections = async () => {
     if (!appId || !taskId) return;
@@ -324,6 +327,54 @@ export const ReliabilityTask: React.FC = () => {
           <LoadingState label="Loading task configuration…" />
         ) : (
           <>
+            {(() => {
+              const globalIssues = (overview?.contract_issues ?? []).filter((issue) =>
+                ['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(issue.code),
+              );
+              if (globalIssues.length === 0) return null;
+              return (
+                <details className="rounded-xl border border-[#D29922]/40 bg-[#D29922]/10 px-4 py-3">
+                  <summary className="cursor-pointer text-sm font-semibold text-[#E3B341]">
+                    {globalIssues.length} global configuration issue
+                    {globalIssues.length === 1 ? '' : 's'}
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    {globalIssues.map((issue) => (
+                      <p key={`${issue.code}-${issue.message}`} className="text-xs text-[#E3B341]">
+                        <span className="font-mono text-[10px]">{issue.code}: </span>
+                        {issue.message}
+                      </p>
+                    ))}
+                  </div>
+                </details>
+              );
+            })()}
+
+            <div className="flex items-center gap-1 border-b border-[#30363D]">
+              <button
+                type="button"
+                onClick={() => setActiveTab('scenarios')}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'scenarios'
+                    ? 'border-[#F0F6FC] text-[#F0F6FC]'
+                    : 'border-transparent text-[#B1BAC4] hover:text-[#F0F6FC]'
+                }`}
+              >
+                Scenarios
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('contract')}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'contract'
+                    ? 'border-[#F0F6FC] text-[#F0F6FC]'
+                    : 'border-transparent text-[#B1BAC4] hover:text-[#F0F6FC]'
+                }`}
+              >
+                Contract Settings
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
                 <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
@@ -382,6 +433,7 @@ export const ReliabilityTask: React.FC = () => {
               </details>
             )}
 
+            {activeTab === 'contract' && (
             <SectionCard
               title="Task test contract"
               description="Safe inputs and the recovery policy the runner will check"
@@ -397,14 +449,23 @@ export const ReliabilityTask: React.FC = () => {
                 ) : undefined
               }
             >
-              {overview?.contract_issues && overview.contract_issues.length > 0 && (
+              {overview?.contract_issues &&
+                overview.contract_issues.filter(
+                  (issue) =>
+                    !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(issue.code),
+                ).length > 0 && (
                 <div className="mb-4 p-3 rounded-lg bg-[#F85149]/10 border border-[#F85149]/30 space-y-1">
-                  {overview.contract_issues.map((issue) => (
+                  {overview.contract_issues
+                    .filter(
+                      (issue) =>
+                        !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(issue.code),
+                    )
+                    .map((issue) => (
                     <div key={`${issue.code}-${issue.message}`} className="text-[11px] text-[#FF7B72]">
                       <span className="font-mono text-[10px]">{issue.code}: </span>
                       {issue.message}
                     </div>
-                  ))}
+                    ))}
                 </div>
               )}
 
@@ -589,7 +650,10 @@ export const ReliabilityTask: React.FC = () => {
                 </button>
               </div>
             </SectionCard>
+            )}
 
+            {activeTab === 'scenarios' && (
+            <>
             <SectionCard
               title="Automatic scenarios"
               description="Compatibility is decided by the backend from contracts and configured adapters"
@@ -662,7 +726,7 @@ export const ReliabilityTask: React.FC = () => {
                   {overview?.checkpoints.map((checkpoint) => (
                     <div
                       key={checkpoint.id}
-                      className="rounded-lg border border-[#30363D] bg-[#000000] overflow-hidden"
+                      className="rounded-lg border border-[#30363D] border-l-2 border-l-[#B1BAC4] bg-[#000000] overflow-hidden"
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 border-b border-[#30363D]">
                         <div className="flex items-center gap-2 min-w-0">
@@ -670,6 +734,28 @@ export const ReliabilityTask: React.FC = () => {
                             {checkpoint.name}
                           </span>
                           <Pill tone="muted">{checkpoint.report_count} reports</Pill>
+                          {checkpoint.scenarios.reduce(
+                            (total, scenario) =>
+                              total +
+                              [...scenario.compatibility.reasons, ...scenario.compatibility.warnings].filter(
+                                (issue) =>
+                                  !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(issue.code),
+                              ).length,
+                            0,
+                          ) > 0 && (
+                            <Pill tone="beige">
+                              {checkpoint.scenarios.reduce(
+                                (total, scenario) =>
+                                  total +
+                                  [...scenario.compatibility.reasons, ...scenario.compatibility.warnings].filter(
+                                    (issue) =>
+                                      !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(issue.code),
+                                  ).length,
+                                0,
+                              )}{' '}
+                              issues
+                            </Pill>
+                          )}
                           <span className="text-[10px] text-[#B1BAC4]">
                             last seen {formatRelative(checkpoint.last_seen_at)}
                           </span>
@@ -692,44 +778,88 @@ export const ReliabilityTask: React.FC = () => {
                             No scenario in the catalogue supports checkpoint triggers.
                           </p>
                         ) : (
-                          checkpoint.scenarios.map((scenario) => (
-                            <div
-                              key={scenario.scenario_id}
-                              className="rounded border border-[#30363D] bg-[#000000] p-3 space-y-1.5"
-                            >
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-[11px] font-semibold text-[#F0F6FC]">
-                                    {scenario.name}
+                          checkpoint.scenarios.map((scenario) => {
+                            const localIssues = [
+                              ...scenario.compatibility.reasons,
+                              ...scenario.compatibility.warnings,
+                            ].filter((issue) =>
+                              !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(issue.code),
+                            );
+                            return (
+                              <details
+                                key={scenario.scenario_id}
+                                className="group rounded-lg border border-[#30363D] bg-[#000000]"
+                              >
+                                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-3">
+                                  <span className="flex min-w-0 items-center gap-2">
+                                    <ChevronDown className="h-4 w-4 shrink-0 text-[#B1BAC4] transition-transform group-open:rotate-180" />
+                                    <span className="min-w-0">
+                                      <span className="block text-sm font-semibold text-[#F0F6FC]">
+                                        {scenario.name}
+                                      </span>
+                                      <span className="mt-1 flex flex-wrap items-center gap-2">
+                                        <CompatibilityBadge status={scenario.compatibility.status} />
+                                        <Pill tone="muted">{scenario.scenario_id}</Pill>
+                                        {localIssues.length > 0 && (
+                                          <Pill tone="beige">{localIssues.length} issue{localIssues.length === 1 ? '' : 's'}</Pill>
+                                        )}
+                                      </span>
+                                    </span>
                                   </span>
-                                  <CompatibilityBadge status={scenario.compatibility.status} />
-                                  <Pill tone="muted">{scenario.scenario_id}</Pill>
-                                </div>
-                                <label className="inline-flex items-center gap-1.5 text-[11px] text-[#C9D1D9]">
-                                  <input
-                                    type="checkbox"
-                                    checked={scenario.enabled}
-                                    onChange={(event) =>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={scenario.enabled}
+                                    onClick={(event) => {
+                                      event.preventDefault();
                                       saveCheckpointScenario(
                                         checkpoint.id,
                                         scenario.scenario_id,
-                                        event.target.checked,
+                                        !scenario.enabled,
                                       ).catch((cause: unknown) =>
                                         toast.error(
                                           cause instanceof Error
                                             ? cause.message
                                             : 'Could not update scenario',
                                         ),
-                                      )
-                                    }
-                                    className="accent-[#C9D1D9]"
-                                  />
-                                  Enabled
-                                </label>
-                              </div>
-                              <ReasonList reasons={scenario.compatibility.reasons} />
-                            </div>
-                          ))
+                                      );
+                                    }}
+                                    className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${
+                                      scenario.enabled
+                                        ? 'border-[#56D364] bg-[#56D364]'
+                                        : 'border-[#30363D] bg-[#161B22]'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-[#FFFFFF] transition-transform ${
+                                        scenario.enabled ? 'translate-x-[22px]' : 'translate-x-0.5'
+                                      }`}
+                                    />
+                                  </button>
+                                </summary>
+                                <div className="border-t border-[#30363D] px-3.5 py-3 space-y-3">
+                                  {scenario.description && (
+                                    <p className="text-sm text-[#B1BAC4] leading-relaxed">
+                                      {scenario.description}
+                                    </p>
+                                  )}
+                                  <ReasonList reasons={scenario.compatibility.reasons.filter((reason) =>
+                                    !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(reason.code),
+                                  )} />
+                                  {scenario.compatibility.warnings
+                                    .filter((warning) =>
+                                      !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(warning.code),
+                                    )
+                                    .map((warning) => (
+                                      <p key={warning.code} className="text-xs text-[#E3B341]">
+                                        <span className="font-mono text-[10px]">{warning.code}: </span>
+                                        {warning.message}
+                                      </p>
+                                    ))}
+                                </div>
+                              </details>
+                            );
+                          })
                         )}
                       </div>
                     </div>
@@ -737,6 +867,8 @@ export const ReliabilityTask: React.FC = () => {
                 </div>
               )}
             </SectionCard>
+            </>
+            )}
           </>
         )}
       </div>
@@ -754,6 +886,8 @@ const ScenarioRowWithSave: React.FC<{
   onSave: (scenarioId: string, enabled: boolean, config: string) => Promise<void>;
   onSaved: () => void;
 }> = ({ item, definition, onSave, onSaved }) => {
+  const [open, setOpen] = useState(false);
+  const [showJson, setShowJson] = useState(false);
   const [enabled, setEnabled] = useState(item.enabled);
   const [config, setConfig] = useState(prettyJson(item.config ?? {}));
   const [dependencyUrl, setDependencyUrl] = useState(
@@ -812,148 +946,133 @@ const ScenarioRowWithSave: React.FC<{
   };
 
   return (
-    <div className="p-3.5 rounded-lg border border-[#30363D] bg-[#000000] space-y-2.5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-[#F0F6FC]" title={item.description}>
-              {item.name}
-            </span>
-            <CompatibilityBadge status={item.compatibility.status} />
-            <Pill tone="muted">{item.scenario_id}</Pill>
-            <Pill tone="muted">v{item.scenario_version}</Pill>
-            {item.category && <Pill tone="blue">{item.category}</Pill>}
-          </div>
-          <p className="text-[11px] text-[#B1BAC4] mt-1 leading-relaxed">{item.description}</p>
-        </div>
-        <label
-          className="inline-flex items-center gap-1.5 text-[11px] text-[#C9D1D9] shrink-0"
-          title={blocked ? 'The backend reports this scenario as unsupported for the task' : undefined}
-        >
-          <input
-            type="checkbox"
-            checked={enabled}
-            disabled={blocked}
-            onChange={(event) => setEnabled(event.target.checked)}
-            className="accent-[#C9D1D9]"
-          />
-          Enabled
-        </label>
-      </div>
-
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#B1BAC4] font-mono">
-        <span>trigger: {item.default_trigger_type}</span>
-        <span>supported: {item.supported_status}</span>
-        <span>implementation: {item.implementation_status}</span>
-      </div>
-
-      <ReasonList reasons={item.compatibility.reasons} />
-      {item.compatibility.warnings.map((warning) => (
-        <p key={warning.code} className="text-[11px] text-[#C9D1D9] leading-relaxed">
-          <span className="font-mono text-[10px]">{warning.code}: </span>
-          {warning.message}
-        </p>
-      ))}
-
-      {item.compatibility.selected_adapters.length > 0 && (
-        <div className="text-[10px] text-[#B1BAC4]">
-          Adapters:{' '}
-          {item.compatibility.selected_adapters
-            .map((adapter) =>
-              String(adapter.adapter_name ?? adapter.name ?? adapter.adapter_id ?? adapter.capability ?? 'adapter'),
-            )
-            .join(', ')}
-        </div>
-      )}
-
-      {definition && (
-        <div className="text-[10px] text-[#B1BAC4]">
-          Requires:{' '}
-          {Object.entries(definition.requires)
-            .filter(([, required]) => required)
-            .map(([key]) => key.replace(/_/g, ' '))
-            .join(', ') || 'nothing beyond execution evidence'}
-          {definition.adapter_requirements.length > 0 && (
-            <>
-              {' · '}adapters:{' '}
-              {definition.adapter_requirements
-                .map(
-                  (requirement) =>
-                    `${requirement.category}/${requirement.capability}${
-                      requirement.trigger ? ` (${requirement.trigger})` : ''
-                    }`,
-                )
-                .join(', ')}
-            </>
-          )}
-        </div>
-      )}
-
-      {definition && (
-        <details>
-          <summary className="text-[10px] text-[#B1BAC4] cursor-pointer">
-            Configuration schema
-          </summary>
-          <pre className="mt-1 p-2 rounded bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto">
-            {prettyJson(definition.configuration_schema)}
-          </pre>
-        </details>
-      )}
-
-      <div className="text-[10px] text-[#B1BAC4]">
-        Expected recovery:{' '}
-        {definition?.expected_recovery.length
-          ? definition.expected_recovery.join(' ')
-          : 'not described by the backend'}
-      </div>
-
-      {needsDependencyUrl && (
-        <label className="block">
-          <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
-            Upstream dependency URL (required by the fault proxy)
-          </span>
-          <input
-            value={dependencyUrl}
-            onChange={(event) => setDependencyUrl(event.target.value)}
-            placeholder="https://sandbox.example/quote"
-            className="mt-1 w-full px-2.5 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
-          />
-          <span className="mt-1 block text-[10px] text-[#B1BAC4] leading-relaxed">
-            The proxy forwards the task's requests to this URL and rewrites the matching
-            absolute URL in the safe input. Without it the generated case is blocked before
-            approval. Saved as <span className="font-mono">scenario_config.dependency_url</span>.
-          </span>
-        </label>
-      )}
-
-      <label className="block">
-        <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
-          Scenario configuration (JSON)
-        </span>
-        <textarea
-          value={config}
-          onChange={(event) => setConfig(event.target.value)}
-          rows={2}
-          className="mt-1 w-full px-2.5 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
-        />
-      </label>
-
-      {configError && <p className="text-[11px] text-[#FF7B72]">{configError}</p>}
-
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] text-[#B1BAC4]">
-          {dirty ? 'Unsaved changes' : 'Matches the backend selection'}
-        </span>
+    <section className="rounded-xl border border-[#30363D] bg-[#000000] overflow-hidden">
+      <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
         <button
           type="button"
-          onClick={save}
-          disabled={busy || !dirty}
-          className="px-2.5 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg disabled:opacity-40"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
         >
-          {busy ? 'Saving…' : 'Save scenario'}
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-[#B1BAC4] transition-transform ${open ? 'rotate-180' : ''}`}
+          />
+          <span className="min-w-0">
+            <span className="block text-lg font-semibold text-[#F0F6FC]">{item.name}</span>
+            <span className="mt-1 flex flex-wrap items-center gap-2">
+              <CompatibilityBadge status={item.compatibility.status} />
+              <Pill tone="muted">{item.scenario_id}</Pill>
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          disabled={blocked}
+          onClick={() => setEnabled((value) => !value)}
+          className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${
+            enabled
+              ? 'border-[#56D364] bg-[#56D364]'
+              : 'border-[#30363D] bg-[#161B22]'
+          } ${blocked ? 'cursor-not-allowed opacity-40' : ''}`}
+          title={blocked ? 'Unsupported by the backend' : enabled ? 'Disable scenario' : 'Enable scenario'}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-[#FFFFFF] transition-transform ${
+              enabled ? 'translate-x-[22px]' : 'translate-x-0.5'
+            }`}
+          />
         </button>
       </div>
-    </div>
+
+      {open && (
+        <div className="border-t border-[#30363D] px-4 py-4 space-y-4">
+          <p className="text-sm text-[#B1BAC4] leading-relaxed">{item.description}</p>
+
+          {item.compatibility.reasons
+            .filter((reason) =>
+              !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(reason.code),
+            ).length > 0 && (
+            <ReasonList
+              reasons={item.compatibility.reasons.filter(
+                (reason) =>
+                  !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(reason.code),
+              )}
+            />
+          )}
+
+          {item.compatibility.warnings
+            .filter((warning) =>
+              !['MISSING_EFFECT_MEASUREMENT', 'NO_CLEANUP_CONFIGURED'].includes(warning.code),
+            )
+            .map((warning) => (
+              <p key={warning.code} className="text-sm text-[#E3B341] leading-relaxed">
+                <span className="font-mono text-[10px]">{warning.code}: </span>
+                {warning.message}
+              </p>
+            ))}
+
+          {needsDependencyUrl && (
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+                Upstream dependency URL
+              </span>
+              <input
+                value={dependencyUrl}
+                onChange={(event) => setDependencyUrl(event.target.value)}
+                placeholder="https://sandbox.example/quote"
+                className="mt-1 w-full px-3 py-2 text-sm bg-[#000000] border border-[#30363D] rounded-lg font-mono"
+              />
+              <span className="mt-1 block text-xs text-[#B1BAC4] leading-relaxed">
+                The proxy forwards requests to this URL.
+              </span>
+            </label>
+          )}
+
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setShowJson((value) => !value)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363D] px-2.5 py-1.5 text-xs text-[#C9D1D9]"
+            >
+              <Braces className="h-3.5 w-3.5" />
+              {showJson ? 'Hide JSON' : 'Edit as JSON'}
+            </button>
+          </div>
+
+          {showJson && (
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
+                Scenario configuration (JSON)
+              </span>
+              <textarea
+                value={config}
+                onChange={(event) => setConfig(event.target.value)}
+                className="mt-1 h-48 w-full overflow-auto px-3 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
+              />
+            </label>
+          )}
+
+          {configError && <p className="text-xs text-[#FF7B72]">{configError}</p>}
+
+          <div className="flex items-center justify-between gap-3 border-t border-[#30363D] pt-3">
+            <span className="text-xs text-[#B1BAC4]">
+              {dirty ? 'Unsaved changes' : 'Matches the backend selection'}
+            </span>
+            <button
+              type="button"
+              onClick={save}
+              disabled={busy || !dirty}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#FFFFFF] px-3.5 py-2 text-xs font-semibold text-black disabled:opacity-40"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {busy ? 'Saving…' : 'Save scenario'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 };
 
