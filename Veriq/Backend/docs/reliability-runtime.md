@@ -100,7 +100,9 @@ delivery is deliberately *not* presented as a broker redelivery.
 * Per run: one Docker network, one Redis container, one PostgreSQL container,
   one worker container, all prefixed `veriq-<run-hash>` and removed at cleanup.
 * Readiness ports bind to `127.0.0.1` only; the backend talks to the broker over
-  the published loopback port, the worker uses the internal service name.
+  the published host port, the worker uses the internal service name. A backend
+  that itself runs in a container reaches that port through
+  `host.docker.internal` (auto-detected, override with `RUNNER_SUBMIT_HOST`).
 * The worker runs the application's own image and code, on a queue nothing else
   consumes, with `--concurrency=1`, `--pids-limit`, `no-new-privileges` and a
   `tmpfs` for the broker.
@@ -110,6 +112,12 @@ delivery is deliberately *not* presented as a broker redelivery.
 * The backend process needs access to the Docker CLI. A backend running inside a
   container without a Docker socket cannot execute a Docker run; use the
   `simulated` runtime type for local demos (it is explicitly non-isolated).
+  `docker-compose.yml` mounts the socket and installs the CLI in the image for
+  this development setup.
+* The `simulated` runtime starts no broker and no worker. Its submissions are
+  recorded in the run lifecycle but never delivered, so it can only demonstrate
+  the state machine and always ends `INCONCLUSIVE`; it is never evidence about
+  the application.
 
 ## Credentials
 

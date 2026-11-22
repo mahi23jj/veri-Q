@@ -116,7 +116,7 @@ export const Applications: React.FC = () => {
           actions={
             <button
               onClick={() => setIsRegisterOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg shadow-2xs transition-all active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               Register Application
@@ -136,7 +136,7 @@ export const Applications: React.FC = () => {
             action={
               <button
                 onClick={() => setIsRegisterOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg transition-all"
               >
                 <Plus className="w-4 h-4" /> Register Application
               </button>
@@ -146,7 +146,7 @@ export const Applications: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Applications list */}
             <div className="lg:col-span-5 space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#777A72] px-1">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#B1BAC4] px-1">
                 Registered Applications ({applications.length})
               </h2>
 
@@ -158,13 +158,13 @@ export const Applications: React.FC = () => {
                     onClick={() => selectApplication(app.id)}
                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-[#FDFCFA] border-[#879B83] shadow-xs ring-1 ring-[#879B83]/30'
-                        : 'bg-[#FDFCFA] border-[#E5E1D7] hover:border-[#D8C8AE] hover:bg-[#FAF8F3]'
+                        ? 'bg-[#000000] border-[#C9D1D9] shadow-xs ring-1 ring-[#C9D1D9]/30'
+                        : 'bg-[#000000] border-[#30363D] hover:border-[#C9D1D9] hover:bg-[#000000]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="font-serif font-bold text-base text-[#343832] truncate">
+                        <h3 className="font-serif font-bold text-base text-[#F0F6FC] truncate">
                           {app.name}
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
@@ -175,15 +175,15 @@ export const Applications: React.FC = () => {
                         </div>
                       </div>
                       <ChevronRight
-                        className={`w-4 h-4 mt-1 shrink-0 ${isSelected ? 'text-[#879B83]' : 'text-[#B3B5AC]'}`}
+                        className={`w-4 h-4 mt-1 shrink-0 ${isSelected ? 'text-[#C9D1D9]' : 'text-[#9CA3AF]'}`}
                       />
                     </div>
 
-                    <p className="text-xs text-[#777A72] mt-2.5 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-[#B1BAC4] mt-2.5 line-clamp-2 leading-relaxed">
                       {app.description || 'No description provided.'}
                     </p>
 
-                    <div className="mt-3 pt-3 border-t border-[#E5E1D7]/70 flex items-center justify-between text-[11px] text-[#777A72]">
+                    <div className="mt-3 pt-3 border-t border-[#30363D]/70 flex items-center justify-between text-[11px] text-[#B1BAC4]">
                       <span>Registered {formatDate(app.created_at)}</span>
                       <span className="font-mono">{shortId(app.id, 8)}</span>
                     </div>
@@ -195,30 +195,30 @@ export const Applications: React.FC = () => {
             {/* Detail */}
             <div className="lg:col-span-7">
               {selectedApplication ? (
-                <div className="bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-2xs overflow-hidden">
-                  <div className="p-6 border-b border-[#E5E1D7] bg-[#FAF8F3] flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="bg-[#000000] rounded-xl border border-[#30363D] shadow-2xs overflow-hidden">
+                  <div className="p-6 border-b border-[#30363D] bg-[#000000] flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <h2 className="font-serif font-bold text-xl text-[#343832]">
+                        <h2 className="font-serif font-bold text-xl text-[#F0F6FC]">
                           {selectedApplication.name}
                         </h2>
                         <Pill tone="sage">{selectedApplication.environment}</Pill>
                       </div>
-                      <p className="text-xs text-[#777A72] mt-1">
+                      <p className="text-xs text-[#B1BAC4] mt-1">
                         {selectedApplication.description || 'No description provided.'}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => setRotating({ id: selectedApplication.id, name: selectedApplication.name })}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
                         title="Rotate the SDK API key"
                       >
                         <KeyRound className="w-3.5 h-3.5" /> Rotate key
                       </button>
                       <button
                         onClick={() => setDeleting({ id: selectedApplication.id, name: selectedApplication.name })}
-                        className="p-2 text-[#A46F70] hover:text-[#733e3f] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#A46F70]/10 transition-colors"
+                        className="p-2 text-[#F85149] hover:text-[#FF7B72] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#F85149]/10 transition-colors"
                         title="Delete application"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -226,28 +226,28 @@ export const Applications: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-6 border-b border-[#E5E1D7] space-y-3">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#777A72]">
+                  <div className="p-6 border-b border-[#30363D] space-y-3">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#B1BAC4]">
                       Registration details
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7]">
-                        <span className="text-[#777A72] block text-[11px]">Application ID</span>
-                        <span className="font-mono text-[#343832] mt-0.5 block break-all">
+                      <div className="p-3 bg-[#000000] rounded-lg border border-[#30363D]">
+                        <span className="text-[#B1BAC4] block text-[11px]">Application ID</span>
+                        <span className="font-mono text-[#F0F6FC] mt-0.5 block break-all">
                           {selectedApplication.id}
                         </span>
                       </div>
-                      <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7]">
-                        <span className="text-[#777A72] block text-[11px] flex items-center gap-1">
+                      <div className="p-3 bg-[#000000] rounded-lg border border-[#30363D]">
+                        <span className="text-[#B1BAC4] block text-[11px] flex items-center gap-1">
                           <Calendar className="w-3 h-3" /> Created
                         </span>
-                        <span className="text-[#343832] mt-0.5 block">
+                        <span className="text-[#F0F6FC] mt-0.5 block">
                           {formatDate(selectedApplication.created_at)}
                         </span>
                       </div>
-                      <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7] sm:col-span-2">
-                        <span className="text-[#777A72] block text-[11px]">API key</span>
-                        <span className="text-[#343832] mt-0.5 block">
+                      <div className="p-3 bg-[#000000] rounded-lg border border-[#30363D] sm:col-span-2">
+                        <span className="text-[#B1BAC4] block text-[11px]">API key</span>
+                        <span className="text-[#F0F6FC] mt-0.5 block">
                           Stored only as a SHA-256 hash. If you lost the plaintext key, rotate it to
                           issue a new one.
                         </span>
@@ -255,8 +255,8 @@ export const Applications: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-6 border-b border-[#E5E1D7]">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#777A72] mb-3">
+                  <div className="p-6 border-b border-[#30363D]">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#B1BAC4] mb-3">
                       Inspect this application
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -301,12 +301,12 @@ export const Applications: React.FC = () => {
                         <Link
                           key={item.to}
                           to={item.to}
-                          className="flex items-start gap-2.5 p-3 rounded-lg border border-[#E5E1D7] hover:border-[#D8C8AE] hover:bg-[#FAF8F3] transition-colors"
+                          className="flex items-start gap-2.5 p-3 rounded-lg border border-[#30363D] hover:border-[#C9D1D9] hover:bg-[#000000] transition-colors"
                         >
-                          <item.icon className="w-3.5 h-3.5 text-[#8297AC] mt-0.5 shrink-0" />
+                          <item.icon className="w-3.5 h-3.5 text-[#C9D1D9] mt-0.5 shrink-0" />
                           <div className="min-w-0">
-                            <div className="text-xs font-medium text-[#343832]">{item.title}</div>
-                            <div className="text-[10px] text-[#777A72] mt-0.5">{item.description}</div>
+                            <div className="text-xs font-medium text-[#F0F6FC]">{item.title}</div>
+                            <div className="text-[10px] text-[#B1BAC4] mt-0.5">{item.description}</div>
                           </div>
                         </Link>
                       ))}
@@ -316,11 +316,11 @@ export const Applications: React.FC = () => {
                   <div className="p-6 flex flex-wrap items-center justify-between gap-3">
                     <button
                       onClick={() => navigate(`/applications/${selectedApplication.id}`)}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg transition-all"
                     >
                       Open application <ExternalLink className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-[11px] text-[#777A72]">
+                    <span className="text-[11px] text-[#B1BAC4]">
                       Application context scopes every dashboard request.
                     </span>
                   </div>

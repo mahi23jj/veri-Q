@@ -62,18 +62,18 @@ export const Executions: React.FC = () => {
         <PageHeader
           title="Task Executions"
           description={`Every reported execution attempt for ${application?.name ?? 'this application'}, newest first.`}
-          eyebrow={<span className="text-[11px] text-[#777A72] font-mono">GET /api/v1/task-executions</span>}
+          eyebrow={<span className="text-[11px] text-[#B1BAC4] font-mono">GET /api/v1/task-executions</span>}
           actions={
             <>
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
               <Link
                 to="/integration"
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg transition-all"
               >
                 <Terminal className="w-3.5 h-3.5" /> Integration guide
               </Link>
@@ -81,7 +81,7 @@ export const Executions: React.FC = () => {
           }
         />
 
-        <div className="p-4 bg-[#8297AC]/8 border border-[#8297AC]/25 rounded-xl flex items-start gap-2.5 text-xs text-[#3b5168]">
+        <div className="p-4 bg-[#C9D1D9]/8 border border-[#C9D1D9]/25 rounded-xl flex items-start gap-2.5 text-xs text-[#C9D1D9]">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <p className="leading-relaxed">
             One row is one actual attempt. Celery retries and redeliveries may reuse a{' '}
@@ -95,10 +95,10 @@ export const Executions: React.FC = () => {
         <SectionCard
           title="Execution history"
           description={data ? `${data.total} execution${data.total === 1 ? '' : 's'} recorded` : 'Loading…'}
-          icon={<Activity className="w-4 h-4 text-[#8297AC]" />}
+          icon={<Activity className="w-4 h-4 text-[#C9D1D9]" />}
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor="execution-status-filter" className="text-[11px] text-[#777A72]">
+              <label htmlFor="execution-status-filter" className="text-[11px] text-[#B1BAC4]">
                 Status
               </label>
               <select
@@ -108,7 +108,7 @@ export const Executions: React.FC = () => {
                   setStatus(event.target.value);
                   setSkip(0);
                 }}
-                className="px-2.5 py-1.5 text-xs bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+                className="px-2.5 py-1.5 text-xs bg-[#000000] border border-[#30363D] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9D1D9]"
               >
                 <option value="">All statuses</option>
                 <option value="RUNNING">Running</option>
@@ -117,7 +117,7 @@ export const Executions: React.FC = () => {
                 <option value="RETRYING">Retrying</option>
               </select>
 
-              <label htmlFor="execution-task-filter" className="text-[11px] text-[#777A72] ml-1">
+              <label htmlFor="execution-task-filter" className="text-[11px] text-[#B1BAC4] ml-1">
                 Task
               </label>
               <select
@@ -127,7 +127,7 @@ export const Executions: React.FC = () => {
                   setTaskName(event.target.value);
                   setSkip(0);
                 }}
-                className="px-2.5 py-1.5 text-xs bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83] max-w-[220px]"
+                className="px-2.5 py-1.5 text-xs bg-[#000000] border border-[#30363D] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9D1D9] max-w-[220px]"
               >
                 <option value="">All tasks</option>
                 {taskOptions?.items.map((task) => (
@@ -144,7 +144,7 @@ export const Executions: React.FC = () => {
                     setTaskName('');
                     setSkip(0);
                   }}
-                  className="text-[11px] font-medium text-[#5f745b] hover:text-[#343832] px-1"
+                  className="text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC] px-1"
                 >
                   Clear
                 </button>
@@ -171,7 +171,7 @@ export const Executions: React.FC = () => {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                  <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                     <tr>
                       <th className="px-5 py-2.5 font-semibold">Task</th>
                       <th className="px-3 py-2.5 font-semibold">Status</th>
@@ -182,18 +182,18 @@ export const Executions: React.FC = () => {
                       <th className="px-3 py-2.5 font-semibold">Attempt</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E5E1D7]">
+                  <tbody className="divide-y divide-[#30363D]">
                     {data.items.map((execution) => (
-                      <tr key={execution.id} className="hover:bg-[#FAF8F3] transition-colors">
+                      <tr key={execution.id} className="hover:bg-[#000000] transition-colors">
                         <td className="px-5 py-3 max-w-[320px]">
                           <Link
                             to={`/applications/${appId}/executions/${execution.id}`}
-                            className="block font-mono text-[11.5px] text-[#343832] hover:text-[#5f745b] truncate"
+                            className="block font-mono text-[11.5px] text-[#F0F6FC] hover:text-[#C9D1D9] truncate"
                             title={execution.task_name}
                           >
                             {execution.task_name}
                           </Link>
-                          <div className="text-[10px] text-[#777A72] mt-0.5 font-mono">
+                          <div className="text-[10px] text-[#B1BAC4] mt-0.5 font-mono">
                             celery task: {execution.celery_task_id || '—'}
                           </div>
                         </td>
@@ -201,26 +201,26 @@ export const Executions: React.FC = () => {
                           <StatusBadge status={execution.status} />
                         </td>
                         <td className="px-3 py-3 max-w-[180px]">
-                          <div className="text-[11px] text-[#343832] truncate">
+                          <div className="text-[11px] text-[#F0F6FC] truncate">
                             {execution.worker_hostname || 'unknown host'}
                           </div>
-                          <div className="text-[10px] text-[#777A72] truncate font-mono">
+                          <div className="text-[10px] text-[#B1BAC4] truncate font-mono">
                             pid {execution.pid ?? '—'}
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-[11px] text-[#52564e]">
+                        <td className="px-3 py-3 text-[11px] text-[#C9D1D9]">
                           {execution.queue_name || '—'}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#52564e]">
+                        <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#C9D1D9]">
                           {formatDateTime(execution.started_at)}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-[11px] font-mono text-[#52564e]">
+                        <td className="px-3 py-3 whitespace-nowrap text-[11px] font-mono text-[#C9D1D9]">
                           {formatDuration(execution.duration_ms)}
                         </td>
                         <td className="px-3 py-3">
                           <Link
                             to={`/applications/${appId}/executions/${execution.id}`}
-                            className="text-[10px] font-mono text-[#8297AC] hover:text-[#343832]"
+                            className="text-[10px] font-mono text-[#C9D1D9] hover:text-[#F0F6FC]"
                             title={execution.execution_id}
                           >
                             {shortId(execution.execution_id, 10)}

@@ -71,7 +71,7 @@ export const ApplicationOverview: React.FC = () => {
             message={`Application ${appId} was not found. It may have been deleted.`}
             onRetry={reload}
           />
-          <Link to="/applications" className="text-xs font-medium text-[#5f745b] hover:text-[#343832]">
+          <Link to="/applications" className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC]">
             Back to applications
           </Link>
         </div>
@@ -92,26 +92,26 @@ export const ApplicationOverview: React.FC = () => {
           eyebrow={
             <div className="flex flex-wrap items-center gap-2">
               <Pill tone="sage">{app?.environment ?? '…'}</Pill>
-              <span className="text-[11px] text-[#777A72] font-mono">{appId}</span>
+              <span className="text-[11px] text-[#B1BAC4] font-mono">{appId}</span>
             </div>
           }
           actions={
             <>
               <Link
                 to={`${base}/executions`}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
               >
                 <Activity className="w-3.5 h-3.5" /> Executions
               </Link>
               <Link
                 to={`${base}/reliability`}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
               >
                 <ShieldCheck className="w-3.5 h-3.5" /> Reliability tests
               </Link>
               <Link
                 to="/integration"
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg transition-all"
               >
                 <Terminal className="w-3.5 h-3.5" /> SDK setup
               </Link>
@@ -132,7 +132,7 @@ export const ApplicationOverview: React.FC = () => {
                   value: data ? formatCount(data.tasks.total) : '—',
                   hint: 'discovered in Celery',
                   icon: ListChecks,
-                  tone: 'text-[#8297AC]',
+                  tone: 'text-[#C9D1D9]',
                   to: `${base}/tasks`,
                 },
                 {
@@ -140,7 +140,7 @@ export const ApplicationOverview: React.FC = () => {
                   value: data ? `${onlineWorkers} / ${data.workers.total}` : '—',
                   hint: 'stale after 120s',
                   icon: Server,
-                  tone: 'text-[#879B83]',
+                  tone: 'text-[#C9D1D9]',
                   to: `${base}/workers`,
                 },
                 {
@@ -148,7 +148,7 @@ export const ApplicationOverview: React.FC = () => {
                   value: data ? formatCount(data.executions.total) : '—',
                   hint: 'recorded attempts',
                   icon: Activity,
-                  tone: 'text-[#8297AC]',
+                  tone: 'text-[#C9D1D9]',
                   to: `${base}/executions`,
                 },
                 {
@@ -156,27 +156,27 @@ export const ApplicationOverview: React.FC = () => {
                   value: data ? formatCount(data.failures.total) : '—',
                   hint: 'TASK_FAILED reported',
                   icon: TriangleAlert,
-                  tone: 'text-[#A46F70]',
+                  tone: 'text-[#F85149]',
                   to: `${base}/executions?status=FAILED`,
                 },
               ].map((card) => (
                 <Link
                   key={card.label}
                   to={card.to}
-                  className="p-5 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-2xs transition-all hover:border-[#D8C8AE]"
+                  className="p-5 bg-[#000000] rounded-xl border border-[#30363D] shadow-2xs transition-all hover:border-[#C9D1D9]"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#777A72]">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#B1BAC4]">
                       {card.label}
                     </span>
                     <card.icon className={`w-4 h-4 ${card.tone}`} />
                   </div>
                   <div className="mt-3">
-                    <span className="font-serif font-bold text-2xl md:text-3xl text-[#343832]">
+                    <span className="font-serif font-bold text-2xl md:text-3xl text-[#F0F6FC]">
                       {card.value}
                     </span>
                   </div>
-                  <span className="text-[11px] text-[#777A72]">{card.hint}</span>
+                  <span className="text-[11px] text-[#B1BAC4]">{card.hint}</span>
                 </Link>
               ))}
             </div>
@@ -186,11 +186,11 @@ export const ApplicationOverview: React.FC = () => {
                 className="lg:col-span-2"
                 title="Recent executions"
                 description="Each row is one actual attempt"
-                icon={<Activity className="w-4 h-4 text-[#8297AC]" />}
+                icon={<Activity className="w-4 h-4 text-[#C9D1D9]" />}
                 actions={
                   <Link
                     to={`${base}/executions`}
-                    className="text-xs font-medium text-[#5f745b] hover:text-[#343832] flex items-center gap-1"
+                    className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC] flex items-center gap-1"
                   >
                     View all <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
@@ -206,7 +206,7 @@ export const ApplicationOverview: React.FC = () => {
                       action={
                         <Link
                           to="/integration"
-                          className="text-xs font-medium text-[#5f745b] hover:text-[#343832]"
+                          className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
                         >
                           Set up the SDK
                         </Link>
@@ -214,25 +214,25 @@ export const ApplicationOverview: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <div className="divide-y divide-[#E5E1D7]">
+                  <div className="divide-y divide-[#30363D]">
                     {data.executions.items.map((execution) => (
                       <Link
                         key={execution.id}
                         to={`${base}/executions/${execution.id}`}
-                        className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[#FAF8F3] transition-colors"
+                        className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[#000000] transition-colors"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-[#343832] font-mono truncate">
+                          <div className="text-xs font-medium text-[#F0F6FC] font-mono truncate">
                             {execution.task_name}
                           </div>
-                          <div className="text-[11px] text-[#777A72] mt-0.5 truncate">
+                          <div className="text-[11px] text-[#B1BAC4] mt-0.5 truncate">
                             {execution.worker_hostname || 'unknown worker'} ·{' '}
                             {execution.queue_name || 'unknown queue'} ·{' '}
                             {formatDateTime(execution.started_at)}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-[11px] font-mono text-[#777A72] hidden sm:block">
+                          <span className="text-[11px] font-mono text-[#B1BAC4] hidden sm:block">
                             {formatDuration(execution.duration_ms)}
                           </span>
                           <StatusBadge status={execution.status} />
@@ -246,11 +246,11 @@ export const ApplicationOverview: React.FC = () => {
               <SectionCard
                 title="Workers"
                 description="Heartbeat-derived inventory"
-                icon={<Server className="w-4 h-4 text-[#8297AC]" />}
+                icon={<Server className="w-4 h-4 text-[#C9D1D9]" />}
                 actions={
                   <Link
                     to={`${base}/workers`}
-                    className="text-xs font-medium text-[#5f745b] hover:text-[#343832] flex items-center gap-1"
+                    className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC] flex items-center gap-1"
                   >
                     All <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
@@ -266,16 +266,16 @@ export const ApplicationOverview: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <div className="divide-y divide-[#E5E1D7]">
+                  <div className="divide-y divide-[#30363D]">
                     {data.workers.items.slice(0, 4).map((worker) => (
                       <div key={worker.id} className="px-5 py-3">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-[#343832] truncate">
+                          <span className="text-xs font-medium text-[#F0F6FC] truncate">
                             {worker.worker_hostname || worker.hostname || 'unknown host'}
                           </span>
                           <StatusBadge status={worker.status} />
                         </div>
-                        <div className="text-[11px] text-[#777A72] mt-0.5">
+                        <div className="text-[11px] text-[#B1BAC4] mt-0.5">
                           Last heartbeat {formatRelative(worker.last_seen_at)}
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-1">
@@ -289,7 +289,7 @@ export const ApplicationOverview: React.FC = () => {
                                 </Pill>
                               ))
                           ) : (
-                            <span className="text-[10px] text-[#777A72]">No consumed queues reported</span>
+                            <span className="text-[10px] text-[#B1BAC4]">No consumed queues reported</span>
                           )}
                         </div>
                       </div>
@@ -303,11 +303,11 @@ export const ApplicationOverview: React.FC = () => {
               <SectionCard
                 title="Task catalog"
                 description="Discovered Celery task names"
-                icon={<ListChecks className="w-4 h-4 text-[#8297AC]" />}
+                icon={<ListChecks className="w-4 h-4 text-[#C9D1D9]" />}
                 actions={
                   <Link
                     to={`${base}/tasks`}
-                    className="text-xs font-medium text-[#5f745b] hover:text-[#343832] flex items-center gap-1"
+                    className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC] flex items-center gap-1"
                   >
                     All tasks <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
@@ -323,16 +323,16 @@ export const ApplicationOverview: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <div className="divide-y divide-[#E5E1D7]">
+                  <div className="divide-y divide-[#30363D]">
                     {data.tasks.items.map((task) => (
                       <Link
                         key={task.id}
                         to={`${base}/tasks`}
-                        className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[#FAF8F3] transition-colors"
+                        className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[#000000] transition-colors"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-mono text-[#343832] truncate">{task.task_name}</div>
-                          <div className="text-[11px] text-[#777A72] mt-0.5">
+                          <div className="text-xs font-mono text-[#F0F6FC] truncate">{task.task_name}</div>
+                          <div className="text-[11px] text-[#B1BAC4] mt-0.5">
                             {task.execution_count} execution{task.execution_count === 1 ? '' : 's'} · last seen{' '}
                             {formatRelative(task.last_seen_at)}
                           </div>
@@ -348,11 +348,11 @@ export const ApplicationOverview: React.FC = () => {
                 <SectionCard
                   title="Recent failures"
                   description="TASK_FAILED events reported by the SDK"
-                  icon={<TriangleAlert className="w-4 h-4 text-[#A46F70]" />}
+                  icon={<TriangleAlert className="w-4 h-4 text-[#F85149]" />}
                   actions={
                     <Link
                       to={`${base}/executions?status=FAILED`}
-                      className="text-xs font-medium text-[#5f745b] hover:text-[#343832] flex items-center gap-1"
+                      className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC] flex items-center gap-1"
                     >
                       Investigate <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
@@ -368,15 +368,15 @@ export const ApplicationOverview: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className="divide-y divide-[#E5E1D7]">
+                    <div className="divide-y divide-[#30363D]">
                       {data.failures.items.map((execution) => (
                         <Link
                           key={execution.id}
                           to={`${base}/executions/${execution.id}`}
-                          className="block px-5 py-3 hover:bg-[#FAF8F3] transition-colors"
+                          className="block px-5 py-3 hover:bg-[#000000] transition-colors"
                         >
-                          <div className="text-xs font-mono text-[#343832] truncate">{execution.task_name}</div>
-                          <div className="text-[11px] text-[#777A72] mt-0.5">
+                          <div className="text-xs font-mono text-[#F0F6FC] truncate">{execution.task_name}</div>
+                          <div className="text-[11px] text-[#B1BAC4] mt-0.5">
                             {execution.worker_hostname || 'unknown worker'} ·{' '}
                             {formatDateTime(execution.started_at)}
                           </div>
@@ -389,11 +389,11 @@ export const ApplicationOverview: React.FC = () => {
                 <SectionCard
                   title="Experiments"
                   description="Definitions scoped to this application"
-                  icon={<FlaskConical className="w-4 h-4 text-[#8297AC]" />}
+                  icon={<FlaskConical className="w-4 h-4 text-[#C9D1D9]" />}
                   actions={
                     <Link
                       to={`${base}/experiments`}
-                      className="text-xs font-medium text-[#5f745b] hover:text-[#343832] flex items-center gap-1"
+                      className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC] flex items-center gap-1"
                     >
                       Open <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
@@ -401,19 +401,19 @@ export const ApplicationOverview: React.FC = () => {
                 >
                   <div className="flex items-center justify-between text-xs">
                     <div>
-                      <span className="font-serif font-bold text-xl text-[#343832]">
+                      <span className="font-serif font-bold text-xl text-[#F0F6FC]">
                         {data?.experiments.total ?? 0}
                       </span>
-                      <span className="text-[#777A72] ml-2">definitions</span>
+                      <span className="text-[#B1BAC4] ml-2">definitions</span>
                     </div>
-                    <Boxes className="w-4 h-4 text-[#777A72]" />
+                    <Boxes className="w-4 h-4 text-[#B1BAC4]" />
                   </div>
-                  <p className="text-[11px] text-[#777A72] mt-2 leading-relaxed">
+                  <p className="text-[11px] text-[#B1BAC4] mt-2 leading-relaxed">
                     Legacy experiment definitions remain read-only history. Reliability plans, approved
                     revisions and isolated runs are managed in{' '}
                     <Link
                       to={`${base}/reliability`}
-                      className="font-medium text-[#5f745b] hover:text-[#343832]"
+                      className="font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
                     >
                       Reliability testing
                     </Link>

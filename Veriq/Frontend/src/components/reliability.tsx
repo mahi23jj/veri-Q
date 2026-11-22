@@ -41,17 +41,17 @@ export const VerdictBadge: React.FC<{ verdict: string | null | undefined; large?
 }) => {
   if (!verdict) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#E5E1D7] bg-[#FAF8F3] text-[11px] font-medium text-[#777A72]">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#30363D] bg-[#000000] text-[11px] font-medium text-[#B1BAC4]">
         <CircleDot className="w-3.5 h-3.5" /> No verdict yet
       </span>
     );
   }
   const tone = VERDICT_TONES[verdict] ?? 'muted';
   const classes: Record<string, string> = {
-    sage: 'bg-[#879B83]/15 text-[#3e563a] border-[#879B83]/40',
-    rose: 'bg-[#A46F70]/15 text-[#733e3f] border-[#A46F70]/40',
-    beige: 'bg-[#D8C8AE]/35 text-[#6b5a43] border-[#D8C8AE]/70',
-    muted: 'bg-[#777A72]/12 text-[#4e5149] border-[#777A72]/25',
+    sage: 'bg-[#56D364]/15 text-[#56D364] border-[#56D364]/40',
+    rose: 'bg-[#F85149]/15 text-[#FF7B72] border-[#F85149]/40',
+    beige: 'bg-[#D29922]/15 text-[#E3B341] border-[#D29922]/40',
+    muted: 'bg-[#B1BAC4]/12 text-[#4e5149] border-[#B1BAC4]/25',
   };
   return (
     <span
@@ -95,10 +95,10 @@ export const LifecycleProgress: React.FC<{ state: string }> = ({ state }) => {
             className={`flex items-center gap-2 text-[11px] font-mono ${
               current
                 ? terminated
-                  ? 'text-[#733e3f] font-semibold'
-                  : 'text-[#343832] font-semibold'
+                  ? 'text-[#FF7B72] font-semibold'
+                  : 'text-[#F0F6FC] font-semibold'
                 : done
-                  ? 'text-[#5f745b]'
+                  ? 'text-[#C9D1D9]'
                   : 'text-[#a5a79f]'
             }`}
           >
@@ -106,11 +106,11 @@ export const LifecycleProgress: React.FC<{ state: string }> = ({ state }) => {
               className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                 current
                   ? terminated
-                    ? 'bg-[#A46F70]/20 border-[#A46F70]'
-                    : 'bg-[#879B83]/25 border-[#879B83]'
+                    ? 'bg-[#F85149]/20 border-[#F85149]'
+                    : 'bg-[#C9D1D9]/25 border-[#C9D1D9]'
                   : done
-                    ? 'bg-[#879B83]/15 border-[#879B83]/50'
-                    : 'border-[#E5E1D7]'
+                    ? 'bg-[#C9D1D9]/15 border-[#C9D1D9]/50'
+                    : 'border-[#30363D]'
               }`}
             >
               {done && <Check className="w-2.5 h-2.5" />}
@@ -121,8 +121,8 @@ export const LifecycleProgress: React.FC<{ state: string }> = ({ state }) => {
         );
       })}
       {terminated && (
-        <div className="flex items-center gap-2 text-[11px] font-mono text-[#733e3f] font-semibold pt-1">
-          <span className="w-4 h-4 rounded-full border border-[#A46F70] bg-[#A46F70]/20 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-2 text-[11px] font-mono text-[#FF7B72] font-semibold pt-1">
+          <span className="w-4 h-4 rounded-full border border-[#F85149] bg-[#F85149]/20 flex items-center justify-center shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-current" />
           </span>
           {state}

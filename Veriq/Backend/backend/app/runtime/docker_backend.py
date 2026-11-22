@@ -39,6 +39,7 @@ from app.runtime.contracts import (
     WorkerReadyReport,
     WorkerStatus,
 )
+from app.runtime.addressing import runner_submit_host
 from app.runtime.readiness import (
     CommandRunner,
     SubprocessRunner,
@@ -141,10 +142,18 @@ class DockerRuntime:
 
         containers: list[_Container] = []
         detail: dict[str, Any] = {}
+        # Ports are published on the Docker host's loopback. A backend running
+        # inside a container reaches them through the host gateway instead.
+        submit_host = runner_submit_host()
+        detail["submission_host"] = submit_host
         try:
             broker_name = f"{plan.namespace}-broker"
             if plan.broker is not None:
                 host_port = reserve_local_port()
+                if not 1 <= host_port <= 65535:
+                    raise RuntimeBackendError(
+                        f"invalid Redis host port mapping: {host_port}"
+                    )
                 container = self._start_container(
                     plan,
                     role="broker",
@@ -161,12 +170,15 @@ class DockerRuntime:
                 detail["broker_url_internal"] = (
                     f"{plan.broker.scheme}://{broker_name}:{plan.broker.port}/0"
                 )
-                detail["broker_readiness"] = {"host": "127.0.0.1", "port": host_port}
+                detail["broker_readiness"] = {
+                    "host": submit_host,
+                    "port": host_port,
+                }
                 # The runner process lives outside the per-run network, so it
-                # submits through the loopback-published broker port; the worker
-                # keeps using the internal service name.
+                # submits through the published host port; the worker keeps
+                # using the internal service name.
                 detail["broker_submit_ref"] = (
-                    f"{plan.broker.scheme}://127.0.0.1:{host_port}/0"
+                    f"{plan.broker.scheme}://{submit_host}:{host_port}/0"
                 )
 
             database_name = f"{plan.namespace}-database"
@@ -196,7 +208,7 @@ class DockerRuntime:
                     f"@{database_name}:{plan.database.port}/{plan.database.database}"
                 )
                 detail["database_readiness"] = {
-                    "host": "127.0.0.1",
+                    "host": submit_host,
                     "port": host_port,
                     "user": plan.database.user,
                     "password": plan.database.password,
@@ -298,11 +310,18 @@ class DockerRuntime:
                 checks["broker_reachable"] = check
                 return check.ok
 
-            poll_until(
+            broker_ready = poll_until(
                 broker_ok,
                 timeout_seconds=timeout_seconds,
                 interval_seconds=self._poll_interval,
             )
+            if not broker_ready:
+                if "broker_reachable" not in checks:
+                    checks["broker_reachable"] = ReadinessCheck(
+                        name="broker_reachable",
+                        ok=False,
+                        detail="Redis did not become ready",
+                    )
         elif plan.broker is not None:
             checks["broker_reachable"] = ReadinessCheck(
                 name="broker_reachable", ok=False, detail="broker was not provisioned"

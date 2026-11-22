@@ -67,7 +67,7 @@ export const Settings: React.FC = () => {
               href={`${API_BASE_URL}/docs`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
             >
               OpenAPI docs <ExternalLink className="w-3.5 h-3.5" />
             </a>
@@ -77,11 +77,11 @@ export const Settings: React.FC = () => {
         <SectionCard
           title="Backend connection"
           description="Resolved from VITE_API_URL, falling back to the local development backend"
-          icon={<Server className="w-4 h-4 text-[#8297AC]" />}
+          icon={<Server className="w-4 h-4 text-[#C9D1D9]" />}
           actions={
             <button
               onClick={reload}
-              className="text-xs font-medium text-[#5f745b] hover:text-[#343832]"
+              className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
             >
               Re-check
             </button>
@@ -89,13 +89,13 @@ export const Settings: React.FC = () => {
         >
           <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7] min-w-0">
-                <span className="text-[11px] text-[#777A72] block">Base URL</span>
-                <span className="font-mono text-[11.5px] text-[#343832] break-all">{API_BASE_URL}</span>
+              <div className="p-3 bg-[#000000] rounded-lg border border-[#30363D] min-w-0">
+                <span className="text-[11px] text-[#B1BAC4] block">Base URL</span>
+                <span className="font-mono text-[11.5px] text-[#F0F6FC] break-all">{API_BASE_URL}</span>
               </div>
-              <div className="p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7] min-w-0">
-                <span className="text-[11px] text-[#777A72] block">API root</span>
-                <span className="font-mono text-[11.5px] text-[#343832] break-all">{API_ROOT}</span>
+              <div className="p-3 bg-[#000000] rounded-lg border border-[#30363D] min-w-0">
+                <span className="text-[11px] text-[#B1BAC4] block">API root</span>
+                <span className="font-mono text-[11.5px] text-[#F0F6FC] break-all">{API_ROOT}</span>
               </div>
             </div>
 
@@ -104,21 +104,21 @@ export const Settings: React.FC = () => {
             ) : error ? (
               <ErrorState message={error} onRetry={reload} />
             ) : (
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7]">
-                <span className="text-[11px] text-[#777A72] flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-[#000000] rounded-lg border border-[#30363D]">
+                <span className="text-[11px] text-[#B1BAC4] flex items-center gap-1.5">
                   <Database className="w-3.5 h-3.5" /> Database
                 </span>
                 <StatusBadge
                   status={health?.database === 'connected' ? 'ONLINE' : 'OFFLINE'}
                   label={health?.database ?? 'unknown'}
                 />
-                <span className="text-[11px] text-[#777A72] ml-auto font-mono">
+                <span className="text-[11px] text-[#B1BAC4] ml-auto font-mono">
                   /api/v1/health → {health?.status ?? 'unknown'}
                 </span>
               </div>
             )}
 
-            <p className="text-[11px] text-[#777A72] leading-relaxed">
+            <p className="text-[11px] text-[#B1BAC4] leading-relaxed">
               If the dashboard reports a network error, confirm the backend is running and that{' '}
               <span className="font-mono">VITE_API_URL</span> (or the backend{' '}
               <span className="font-mono">CORS_ORIGINS</span>) allows this origin.
@@ -129,12 +129,12 @@ export const Settings: React.FC = () => {
         <SectionCard
           title="Authentication model"
           description="How the dashboard and the SDK authenticate today"
-          icon={<ShieldCheck className="w-4 h-4 text-[#879B83]" />}
+          icon={<ShieldCheck className="w-4 h-4 text-[#C9D1D9]" />}
         >
-          <div className="space-y-3 text-xs text-[#61655b] leading-relaxed">
-            <div className="p-3 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg">
-              <span className="font-semibold text-[#343832] flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-[#8297AC]" /> SDK ingestion
+          <div className="space-y-3 text-xs text-[#B1BAC4] leading-relaxed">
+            <div className="p-3 bg-[#000000] border border-[#30363D] rounded-lg">
+              <span className="font-semibold text-[#F0F6FC] flex items-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-[#C9D1D9]" /> SDK ingestion
               </span>
               <p className="mt-1">
                 Every SDK write uses <span className="font-mono">X-API-Key</span>. The key is scoped to one
@@ -142,9 +142,9 @@ export const Settings: React.FC = () => {
                 persisted by this dashboard.
               </p>
             </div>
-            <div className="p-3 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg">
-              <span className="font-semibold text-[#343832] flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-[#A46F70]" /> Dashboard reads
+            <div className="p-3 bg-[#000000] border border-[#30363D] rounded-lg">
+              <span className="font-semibold text-[#F0F6FC] flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-[#F85149]" /> Dashboard reads
               </span>
               <p className="mt-1">
                 Control reads (applications, tasks, workers, executions, experiments) are currently
@@ -158,12 +158,12 @@ export const Settings: React.FC = () => {
         <SectionCard
           title="API surface"
           description="Endpoints this dashboard uses or documents"
-          icon={<Terminal className="w-4 h-4 text-[#8297AC]" />}
+          icon={<Terminal className="w-4 h-4 text-[#C9D1D9]" />}
           bodyClassName="p-0"
         >
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+              <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                 <tr>
                   <th className="px-5 py-2.5 font-semibold">Method</th>
                   <th className="px-3 py-2.5 font-semibold">Path</th>
@@ -171,15 +171,15 @@ export const Settings: React.FC = () => {
                   <th className="px-3 py-2.5 font-semibold">Purpose</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E1D7]">
+              <tbody className="divide-y divide-[#30363D]">
                 {ENDPOINTS.map((endpoint) => (
-                  <tr key={`${endpoint.method}-${endpoint.path}`} className="bg-white">
-                    <td className="px-5 py-2 font-mono text-[10.5px] text-[#52564e]">{endpoint.method}</td>
-                    <td className="px-3 py-2 font-mono text-[10.5px] text-[#343832]">{endpoint.path}</td>
+                  <tr key={`${endpoint.method}-${endpoint.path}`} className="bg-[#000000]">
+                    <td className="px-5 py-2 font-mono text-[10.5px] text-[#C9D1D9]">{endpoint.method}</td>
+                    <td className="px-3 py-2 font-mono text-[10.5px] text-[#F0F6FC]">{endpoint.path}</td>
                     <td className="px-3 py-2">
                       <Pill tone={endpoint.auth === 'none' ? 'muted' : 'beige'}>{endpoint.auth}</Pill>
                     </td>
-                    <td className="px-3 py-2 text-[#61655b]">{endpoint.purpose}</td>
+                    <td className="px-3 py-2 text-[#B1BAC4]">{endpoint.purpose}</td>
                   </tr>
                 ))}
               </tbody>
@@ -190,9 +190,9 @@ export const Settings: React.FC = () => {
         <SectionCard
           title="Not yet supported"
           description="Capabilities intentionally absent from the current backend"
-          icon={<CheckCircle2 className="w-4 h-4 text-[#777A72]" />}
+          icon={<CheckCircle2 className="w-4 h-4 text-[#B1BAC4]" />}
         >
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#61655b]">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#B1BAC4]">
             {[
               'User accounts, sign-in and teams',
               'Dashboard run listing per experiment',
@@ -203,14 +203,14 @@ export const Settings: React.FC = () => {
               'Alerts, notifications and retention settings',
               'Non-Celery queue integrations',
             ].map((item) => (
-              <li key={item} className="p-2.5 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg">
+              <li key={item} className="p-2.5 bg-[#000000] border border-[#30363D] rounded-lg">
                 {item}
               </li>
             ))}
           </ul>
           <Link
             to="/integration"
-            className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-[#5f745b] hover:text-[#343832]"
+            className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
           >
             <Terminal className="w-3.5 h-3.5" /> SDK integration guide
           </Link>

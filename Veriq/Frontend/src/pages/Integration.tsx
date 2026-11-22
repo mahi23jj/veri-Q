@@ -107,7 +107,7 @@ export const Integration: React.FC = () => {
           actions={
             <Link
               to="/applications?action=register"
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg shadow-2xs transition-all"
             >
               <KeyRound className="w-3.5 h-3.5" /> Get an API key
             </Link>
@@ -115,33 +115,33 @@ export const Integration: React.FC = () => {
         />
 
         {selectedApplication ? (
-          <div className="p-4 bg-[#879B83]/10 border border-[#879B83]/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="p-4 bg-[#C9D1D9]/10 border border-[#C9D1D9]/30 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div>
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-[#777A72] block">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-[#B1BAC4] block">
                 Integrating
               </span>
-              <span className="font-serif font-bold text-base text-[#343832]">
+              <span className="font-serif font-bold text-base text-[#F0F6FC]">
                 {selectedApplication.name}
               </span>
-              <span className="text-[#777A72] ml-2 font-mono">{selectedApplication.id}</span>
+              <span className="text-[#B1BAC4] ml-2 font-mono">{selectedApplication.id}</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link
                 to={base}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
               >
                 Open application <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link
                 to="/applications"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
               >
                 Switch application
               </Link>
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-[#D8C8AE]/25 border border-[#D8C8AE]/60 rounded-xl text-xs text-[#6b5a43] flex items-start gap-2">
+          <div className="p-4 bg-[#C9D1D9]/25 border border-[#C9D1D9]/60 rounded-xl text-xs text-[#C9D1D9] flex items-start gap-2">
             <TriangleAlert className="w-4 h-4 mt-0.5 shrink-0" />
             <p>
               No application selected. Register one first — the API key is returned once by{' '}
@@ -151,14 +151,14 @@ export const Integration: React.FC = () => {
           </div>
         )}
 
-        <nav className="bg-[#FDFCFA] border border-[#E5E1D7] rounded-xl p-3 flex flex-wrap gap-2">
+        <nav className="bg-[#000000] border border-[#30363D] rounded-xl p-3 flex flex-wrap gap-2">
           {STEPS.map((step, index) => (
             <a
               key={step.id}
               href={`#${step.id}`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[#52564e] bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
             >
-              <step.icon className="w-3.5 h-3.5 text-[#777A72]" />
+              <step.icon className="w-3.5 h-3.5 text-[#B1BAC4]" />
               {index + 1}. {step.label}
             </a>
           ))}
@@ -168,11 +168,11 @@ export const Integration: React.FC = () => {
           <SectionCard
             title="1. Install the SDK"
             description="Optional Celery extra; the core client needs only httpx"
-            icon={<Terminal className="w-4 h-4 text-[#8297AC]" />}
+            icon={<Terminal className="w-4 h-4 text-[#C9D1D9]" />}
           >
             <div className="space-y-3">
               <CodeBlock code={installCode} label="bash" />
-              <p className="text-xs text-[#61655b] leading-relaxed">
+              <p className="text-xs text-[#B1BAC4] leading-relaxed">
                 The SDK never reads environment variables itself — the host application passes values
                 explicitly. Keep the SDK version pinned in the target application's dependencies.
               </p>
@@ -184,14 +184,14 @@ export const Integration: React.FC = () => {
           <SectionCard
             title="2. Configure the client"
             description="Create one client per process and reuse it"
-            icon={<KeyRound className="w-4 h-4 text-[#8297AC]" />}
+            icon={<KeyRound className="w-4 h-4 text-[#C9D1D9]" />}
           >
             <div className="space-y-3">
               <CodeBlock code={configureCode} label="python" />
               <CodeBlock code={envCode} label=".env" />
-              <ul className="text-xs text-[#61655b] space-y-1.5 leading-relaxed">
+              <ul className="text-xs text-[#B1BAC4] space-y-1.5 leading-relaxed">
                 <li className="flex gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#879B83] mt-0.5 shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#C9D1D9] mt-0.5 shrink-0" />
                   <span>
                     <span className="font-mono">api_url</span> accepts a trailing slash or{' '}
                     <span className="font-mono">/api/v1</span>; both are normalized. Credentials in the URL
@@ -199,14 +199,14 @@ export const Integration: React.FC = () => {
                   </span>
                 </li>
                 <li className="flex gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#879B83] mt-0.5 shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#C9D1D9] mt-0.5 shrink-0" />
                   <span>
                     The key is sent only in the <span className="font-mono">X-API-Key</span> header. It is
                     redacted from <span className="font-mono">repr()</span> and every error message.
                   </span>
                 </li>
                 <li className="flex gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#879B83] mt-0.5 shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#C9D1D9] mt-0.5 shrink-0" />
                   <span>
                     Lost keys cannot be recovered. Rotate the key from the application's detail panel and
                     redeploy the environment variable.
@@ -221,19 +221,19 @@ export const Integration: React.FC = () => {
           <SectionCard
             title="3. Wire Celery signals"
             description="One call per process installs task and worker reporting"
-            icon={<BookOpen className="w-4 h-4 text-[#8297AC]" />}
+            icon={<BookOpen className="w-4 h-4 text-[#C9D1D9]" />}
           >
             <div className="space-y-3">
               <CodeBlock code={integrateCode} label="python" />
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border border-[#E5E1D7] rounded-lg overflow-hidden">
-                  <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                <table className="w-full text-left text-xs border border-[#30363D] rounded-lg overflow-hidden">
+                  <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                     <tr>
                       <th className="px-3 py-2 font-semibold">Celery signal</th>
                       <th className="px-3 py-2 font-semibold">VeriQ event</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E5E1D7]">
+                  <tbody className="divide-y divide-[#30363D]">
                     {[
                       ['task_prerun', 'TASK_STARTED'],
                       ['task_postrun (success)', 'TASK_SUCCEEDED'],
@@ -243,15 +243,15 @@ export const Integration: React.FC = () => {
                       ['heartbeat_sent (30s throttle)', 'WORKER_HEARTBEAT'],
                       ['worker_shutdown', 'WORKER_SHUTTING_DOWN'],
                     ].map(([signal, event]) => (
-                      <tr key={signal} className="bg-white">
-                        <td className="px-3 py-2 font-mono text-[11px] text-[#343832]">{signal}</td>
-                        <td className="px-3 py-2 font-mono text-[11px] text-[#52564e]">{event}</td>
+                      <tr key={signal} className="bg-[#000000]">
+                        <td className="px-3 py-2 font-mono text-[11px] text-[#F0F6FC]">{signal}</td>
+                        <td className="px-3 py-2 font-mono text-[11px] text-[#C9D1D9]">{event}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-[#61655b] leading-relaxed">
+              <p className="text-xs text-[#B1BAC4] leading-relaxed">
                 Each attempt gets its own <span className="font-mono">execution_id</span>, even when Celery
                 reuses a <span className="font-mono">celery_task_id</span>. Eager calls are skipped, and
                 reporting errors are logged and swallowed so monitoring can never change a task's outcome.
@@ -264,11 +264,11 @@ export const Integration: React.FC = () => {
           <SectionCard
             title="4. Start the application and workers"
             description="Integration must be installed before Celery forks"
-            icon={<Server className="w-4 h-4 text-[#8297AC]" />}
+            icon={<Server className="w-4 h-4 text-[#C9D1D9]" />}
           >
             <div className="space-y-3">
               <CodeBlock code={workerCode} label="bash" />
-              <p className="text-xs text-[#61655b] leading-relaxed">
+              <p className="text-xs text-[#B1BAC4] leading-relaxed">
                 Use a distinct queue for experiment traffic (for example{' '}
                 <span className="font-mono">veriq.test</span>) and keep{' '}
                 <span className="font-mono">--concurrency=1</span> on that worker. VeriQ does not control
@@ -283,10 +283,10 @@ export const Integration: React.FC = () => {
           <SectionCard
             title="5. Trigger and verify discovery"
             description="Starting an instrumented process reports task names and worker state"
-            icon={<ListChecks className="w-4 h-4 text-[#8297AC]" />}
+            icon={<ListChecks className="w-4 h-4 text-[#C9D1D9]" />}
           >
             <div className="space-y-3">
-              <p className="text-xs text-[#61655b] leading-relaxed">
+              <p className="text-xs text-[#B1BAC4] leading-relaxed">
                 There is no dashboard button to trigger discovery — it happens when the SDK starts. Import
                 your Celery app and call <span className="font-mono">integrate()</span> in the API process
                 and in each worker entrypoint.
@@ -295,13 +295,13 @@ export const Integration: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 <Link
                   to={`${base}/tasks`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
                 >
                   <ListChecks className="w-3.5 h-3.5" /> Task catalog
                 </Link>
                 <Link
                   to={`${base}/workers`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
                 >
                   <Server className="w-3.5 h-3.5" /> Workers & queues
                 </Link>
@@ -309,7 +309,7 @@ export const Integration: React.FC = () => {
                   href={`${API_BASE_URL}/docs`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
                 >
                   OpenAPI docs <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -322,9 +322,9 @@ export const Integration: React.FC = () => {
           <SectionCard
             title="6. See execution events"
             description="Run a task and follow its lifecycle in the dashboard"
-            icon={<Play className="w-4 h-4 text-[#8297AC]" />}
+            icon={<Play className="w-4 h-4 text-[#C9D1D9]" />}
           >
-            <div className="space-y-3 text-xs text-[#61655b] leading-relaxed">
+            <div className="space-y-3 text-xs text-[#B1BAC4] leading-relaxed">
               <p>
                 Enqueue a task normally. When the worker picks it up,{' '}
                 <span className="font-mono">TASK_STARTED</span>, optional{' '}
@@ -334,18 +334,18 @@ export const Integration: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 <Link
                   to={`${base}/executions`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg"
                 >
                   Open execution history <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   to={`${base}/experiments`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
                 >
                   Experiments
                 </Link>
               </div>
-              <div className="p-3 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg text-[#777A72]">
+              <div className="p-3 bg-[#000000] border border-[#30363D] rounded-lg text-[#B1BAC4]">
                 Experiment runs are created by the runner through{' '}
                 <span className="font-mono">POST /api/v1/experiments/&#123;id&#125;/runs</span> and require
                 the application API key. The dashboard does not create or drive runs.

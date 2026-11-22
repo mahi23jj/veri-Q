@@ -8,25 +8,25 @@
 
 @layer base {
   :root {
-    --background: 46 32% 95%;      /* #F7F5EF Cream */
-    --foreground: 98 6% 20%;       /* #343832 Dark text */
-    --card: 45 40% 99%;            /* #FDFCFA Warm Card */
-    --card-foreground: 98 6% 20%;
-    --popover: 45 40% 99%;
-    --popover-foreground: 98 6% 20%;
-    --primary: 110 12% 56%;        /* #879B83 Sage */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 37 38% 76%;       /* #D8C8AE Warm Beige */
-    --secondary-foreground: 98 6% 20%;
-    --muted: 50 14% 92%;           /* #EFEEE7 Subtle */
-    --muted-foreground: 85 4% 46%; /* #777A72 Secondary Text */
-    --accent: 210 21% 59%;         /* #8297AC Dusty Blue */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 359 23% 54%;    /* #A46F70 Rosewood */
-    --destructive-foreground: 0 0% 100%;
-    --border: 43 21% 87%;          /* #E5E1D7 Border */
-    --input: 43 21% 87%;
-    --ring: 110 12% 56%;
+    --background: 0 0% 0%;         /* #000000 Dashboard */
+    --foreground: 210 40% 98%;      /* #F0F6FC Dashboard text */
+    --card: 0 0% 0%;                 /* #000000 Content */
+    --card-foreground: 210 40% 98%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 212 13% 82%;         /* #C9D1D9 Neutral primary */
+    --primary-foreground: 0 0% 0%;
+    --secondary: 41 63% 49%;        /* #D29922 Retries/warnings */
+    --secondary-foreground: 0 0% 0%;
+    --muted: 215 28% 7%;             /* #0D1117 Subtle dashboard surface */
+    --muted-foreground: 213 14% 73%; /* #B1BAC4 Secondary text */
+    --accent: 212 13% 82%;           /* #C9D1D9 Neutral accent */
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 90% 64%;        /* #F85149 Failures */
+    --destructive-foreground: 0 0% 0%;
+    --border: 215 16% 23%;           /* #30363D Dashboard lines */
+    --input: 215 16% 23%;
+    --ring: 212 13% 82%;
     --radius: 0.5rem;
   }
 
@@ -36,7 +36,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background-color: #F7F5EF;
+    background-color: #000000;
   }
 
   html {

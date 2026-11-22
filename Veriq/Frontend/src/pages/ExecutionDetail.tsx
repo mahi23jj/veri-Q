@@ -44,42 +44,42 @@ function eventMeta(eventType: string) {
     case 'TASK_STARTED':
       return {
         label: 'Task started',
-        tone: 'bg-[#8297AC]',
+        tone: 'bg-[#C9D1D9]',
         icon: Activity,
         description: 'The worker began executing this attempt.',
       };
     case 'TASK_SUCCEEDED':
       return {
         label: 'Task succeeded',
-        tone: 'bg-[#879B83]',
+        tone: 'bg-[#C9D1D9]',
         icon: CheckCircle2,
         description: 'The task returned without raising.',
       };
     case 'TASK_FAILED':
       return {
         label: 'Task failed',
-        tone: 'bg-[#A46F70]',
+        tone: 'bg-[#F85149]',
         icon: XCircle,
         description: 'The task raised an exception and this attempt ended.',
       };
     case 'TASK_RETRY_REQUESTED':
       return {
         label: 'Retry requested',
-        tone: 'bg-[#D8C8AE]',
+        tone: 'bg-[#C9D1D9]',
         icon: RotateCcw,
         description: 'Celery asked for the task to be retried; a new attempt will follow.',
       };
     case 'TASK_CHECKPOINT':
       return {
         label: 'Checkpoint',
-        tone: 'bg-[#8297AC]',
+        tone: 'bg-[#C9D1D9]',
         icon: Flag,
         description: 'The task reported a report-only checkpoint.',
       };
     default:
       return {
         label: eventType,
-        tone: 'bg-[#777A72]',
+        tone: 'bg-[#B1BAC4]',
         icon: Info,
         description: 'Reported event.',
       };
@@ -118,15 +118,15 @@ const TimelineEntry: React.FC<{ event: ExecutionEvent; startedAt: string }> = ({
   return (
     <li className="relative pl-8">
       <span
-        className={`absolute left-[3px] top-3 w-4 h-4 rounded-full ${meta.tone} ring-4 ring-[#FDFCFA] flex items-center justify-center`}
+        className={`absolute left-[3px] top-3 w-4 h-4 rounded-full ${meta.tone} ring-4 ring-[#FFFFFF] flex items-center justify-center`}
       >
         <Icon className="w-2.5 h-2.5 text-white" />
       </span>
 
-      <div className="bg-[#FAF8F3] border border-[#E5E1D7] rounded-xl p-4">
+      <div className="bg-[#000000] border border-[#30363D] rounded-xl p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2 min-w-0">
-            <span className="text-sm font-semibold text-[#343832]">{meta.label}</span>
+            <span className="text-sm font-semibold text-[#F0F6FC]">{meta.label}</span>
             <Pill tone="muted" title={event.event_type}>
               {event.event_type}
             </Pill>
@@ -134,28 +134,28 @@ const TimelineEntry: React.FC<{ event: ExecutionEvent; startedAt: string }> = ({
               {event.source}
             </Pill>
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-[#777A72] font-mono shrink-0">
+          <div className="flex items-center gap-2 text-[11px] text-[#B1BAC4] font-mono shrink-0">
             <span>{formatTime(event.occurred_at)}</span>
-            <span className="text-[#B3B5AC]">·</span>
+            <span className="text-[#9CA3AF]">·</span>
             <span title="Offset from the start of this execution">
               {offsetFrom(startedAt, event.occurred_at)}
             </span>
           </div>
         </div>
 
-        <p className="text-xs text-[#61655b] mt-1">{meta.description}</p>
+        <p className="text-xs text-[#B1BAC4] mt-1">{meta.description}</p>
 
         {exception && (
-          <div className="mt-3 p-3 bg-[#A46F70]/10 border border-[#A46F70]/30 rounded-lg">
-            <div className="text-[10px] uppercase tracking-wider font-semibold text-[#733e3f] mb-1">
+          <div className="mt-3 p-3 bg-[#F85149]/10 border border-[#F85149]/30 rounded-lg">
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-[#FF7B72] mb-1">
               Exception
             </div>
-            <div className="font-mono text-[11.5px] text-[#733e3f] break-words">
+            <div className="font-mono text-[11.5px] text-[#FF7B72] break-words">
               {exception.name ? `${exception.name}: ` : ''}
               {exception.message ?? 'No message reported'}
             </div>
             {exception.traceback && (
-              <pre className="mt-2 p-2.5 bg-[#343832] text-[#F7F5EF] rounded-md text-[11px] font-mono overflow-x-auto max-h-64">
+              <pre className="mt-2 p-2.5 bg-[#F0F6FC] text-[#000000] rounded-md text-[11px] font-mono overflow-x-auto max-h-64">
                 {exception.traceback}
               </pre>
             )}
@@ -166,13 +166,13 @@ const TimelineEntry: React.FC<{ event: ExecutionEvent; startedAt: string }> = ({
           <>
             <button
               onClick={() => setExpanded((value) => !value)}
-              className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-[#5f745b] hover:text-[#343832]"
+              className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
             >
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               {expanded ? 'Hide payload' : 'Inspect payload'}
             </button>
             {expanded && (
-              <pre className="mt-2 p-2.5 bg-white border border-[#E5E1D7] rounded-md text-[11px] font-mono text-[#343832] overflow-x-auto max-w-full">
+              <pre className="mt-2 p-2.5 bg-[#000000] border border-[#30363D] rounded-md text-[11px] font-mono text-[#F0F6FC] overflow-x-auto max-w-full">
                 {payloadText}
               </pre>
             )}
@@ -231,7 +231,7 @@ export const ExecutionDetail: React.FC = () => {
         <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-4">
           <Link
             to={`/applications/${appId}/executions`}
-            className="inline-flex items-center gap-1.5 text-xs text-[#777A72] hover:text-[#343832]"
+            className="inline-flex items-center gap-1.5 text-xs text-[#B1BAC4] hover:text-[#F0F6FC]"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to executions
           </Link>
@@ -257,7 +257,7 @@ export const ExecutionDetail: React.FC = () => {
         <div className="space-y-3">
           <Link
             to={`/applications/${appId}/executions`}
-            className="inline-flex items-center gap-1.5 text-xs text-[#777A72] hover:text-[#343832]"
+            className="inline-flex items-center gap-1.5 text-xs text-[#B1BAC4] hover:text-[#F0F6FC]"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to executions
           </Link>
@@ -281,7 +281,7 @@ export const ExecutionDetail: React.FC = () => {
             actions={
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
@@ -296,7 +296,7 @@ export const ExecutionDetail: React.FC = () => {
             <SectionCard
               title="Execution timeline"
               description="Chronological lifecycle events reported by the SDK"
-              icon={<Clock className="w-4 h-4 text-[#8297AC]" />}
+              icon={<Clock className="w-4 h-4 text-[#C9D1D9]" />}
               bodyClassName="p-5"
             >
               {orderedEvents.length === 0 ? (
@@ -306,7 +306,7 @@ export const ExecutionDetail: React.FC = () => {
                   description="The execution row exists but no lifecycle events were stored. This happens when observation is disabled for the task, or when events were acknowledged but filtered by the backend."
                 />
               ) : (
-                <ol className="relative space-y-4 border-l border-[#E5E1D7] ml-2 pl-0">
+                <ol className="relative space-y-4 border-l border-[#30363D] ml-2 pl-0">
                   {orderedEvents.map((event) => (
                     <TimelineEntry key={event.id} event={event} startedAt={execution.started_at} />
                   ))}
@@ -318,7 +318,7 @@ export const ExecutionDetail: React.FC = () => {
               <SectionCard
                 title={`Checkpoints reached (${checkpoints.length})`}
                 description="Report-only markers emitted by veriq.checkpoint(name)"
-                icon={<Flag className="w-4 h-4 text-[#8297AC]" />}
+                icon={<Flag className="w-4 h-4 text-[#C9D1D9]" />}
               >
                 <div className="space-y-2">
                   {checkpoints.map((event) => {
@@ -331,10 +331,10 @@ export const ExecutionDetail: React.FC = () => {
                     return (
                       <div
                         key={event.id}
-                        className="flex items-center justify-between gap-3 p-2.5 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg"
+                        className="flex items-center justify-between gap-3 p-2.5 bg-[#000000] border border-[#30363D] rounded-lg"
                       >
-                        <span className="font-mono text-[11.5px] text-[#343832] break-all">{name}</span>
-                        <span className="text-[11px] text-[#777A72] font-mono shrink-0">
+                        <span className="font-mono text-[11.5px] text-[#F0F6FC] break-all">{name}</span>
+                        <span className="text-[11px] text-[#B1BAC4] font-mono shrink-0">
                           {formatTime(event.occurred_at)}
                         </span>
                       </div>
@@ -348,27 +348,27 @@ export const ExecutionDetail: React.FC = () => {
               <SectionCard
                 title="Related attempts"
                 description={`Other executions sharing Celery task id ${execution.celery_task_id}`}
-                icon={<RotateCcw className="w-4 h-4 text-[#8297AC]" />}
+                icon={<RotateCcw className="w-4 h-4 text-[#C9D1D9]" />}
                 bodyClassName="p-0"
               >
-                <div className="divide-y divide-[#E5E1D7]">
+                <div className="divide-y divide-[#30363D]">
                   {sameCeleryTaskAttempts.map((attempt) => (
                     <Link
                       key={attempt.id}
                       to={`/applications/${appId}/executions/${attempt.id}`}
-                      className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[#FAF8F3] transition-colors"
+                      className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[#000000] transition-colors"
                     >
                       <div className="min-w-0">
-                        <div className="text-[11.5px] font-mono text-[#343832]">
+                        <div className="text-[11.5px] font-mono text-[#F0F6FC]">
                           {shortId(attempt.execution_id, 12)}
                         </div>
-                        <div className="text-[11px] text-[#777A72] mt-0.5">
+                        <div className="text-[11px] text-[#B1BAC4] mt-0.5">
                           {formatDateTime(attempt.started_at)} ·{' '}
                           {attempt.worker_hostname || 'unknown worker'}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-[11px] font-mono text-[#777A72]">
+                        <span className="text-[11px] font-mono text-[#B1BAC4]">
                           {formatDuration(attempt.duration_ms)}
                         </span>
                         <StatusBadge status={attempt.status} />
@@ -384,7 +384,7 @@ export const ExecutionDetail: React.FC = () => {
             <SectionCard
               title="Execution details"
               description="One row per actual attempt"
-              icon={<Server className="w-4 h-4 text-[#8297AC]" />}
+              icon={<Server className="w-4 h-4 text-[#C9D1D9]" />}
             >
               <div className="grid grid-cols-1 gap-2">
                 <DetailRow label="Status">
@@ -413,7 +413,7 @@ export const ExecutionDetail: React.FC = () => {
                 </DetailRow>
                 <DetailRow label="Started">
                   {formatDateTime(execution.started_at)}{' '}
-                  <span className="text-[#777A72]">({formatRelative(execution.started_at)})</span>
+                  <span className="text-[#B1BAC4]">({formatRelative(execution.started_at)})</span>
                 </DetailRow>
                 <DetailRow label="Finished">
                   {execution.finished_at ? formatDateTime(execution.finished_at) : 'Still running / no terminal event'}
@@ -434,7 +434,7 @@ export const ExecutionDetail: React.FC = () => {
               </div>
             </SectionCard>
 
-            <div className="p-4 bg-[#8297AC]/8 border border-[#8297AC]/25 rounded-xl text-xs text-[#3b5168] flex items-start gap-2">
+            <div className="p-4 bg-[#C9D1D9]/8 border border-[#C9D1D9]/25 rounded-xl text-xs text-[#C9D1D9] flex items-start gap-2">
               <TriangleAlert className="w-4 h-4 mt-0.5 shrink-0" />
               <p className="leading-relaxed">
                 Execution events are separate from experiment events. This timeline never merges the two,

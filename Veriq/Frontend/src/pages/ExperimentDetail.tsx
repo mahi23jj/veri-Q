@@ -106,7 +106,7 @@ export const ExperimentDetail: React.FC = () => {
         <div className="p-6 md:p-8 max-w-7xl w-full mx-auto space-y-4">
           <Link
             to={`/applications/${appId}/experiments`}
-            className="inline-flex items-center gap-1.5 text-xs text-[#777A72] hover:text-[#343832]"
+            className="inline-flex items-center gap-1.5 text-xs text-[#B1BAC4] hover:text-[#F0F6FC]"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to experiments
           </Link>
@@ -125,7 +125,7 @@ export const ExperimentDetail: React.FC = () => {
         <div className="space-y-3">
           <Link
             to={`/applications/${appId}/experiments`}
-            className="inline-flex items-center gap-1.5 text-xs text-[#777A72] hover:text-[#343832]"
+            className="inline-flex items-center gap-1.5 text-xs text-[#B1BAC4] hover:text-[#F0F6FC]"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to experiments
           </Link>
@@ -146,7 +146,7 @@ export const ExperimentDetail: React.FC = () => {
               <>
                 <button
                   onClick={reload}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
                 </button>
@@ -154,13 +154,13 @@ export const ExperimentDetail: React.FC = () => {
                   <>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
                     >
                       <Edit2 className="w-3.5 h-3.5" /> Edit draft
                     </button>
                     <button
                       onClick={() => setIsDeleting(true)}
-                      className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#A46F70] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#A46F70]/10 transition-colors"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#F85149] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#F85149]/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Delete
                     </button>
@@ -172,7 +172,7 @@ export const ExperimentDetail: React.FC = () => {
         </div>
 
         {!belongsToApplication && (
-          <div className="p-4 bg-[#D8C8AE]/25 border border-[#D8C8AE]/60 rounded-xl text-xs text-[#6b5a43]">
+          <div className="p-4 bg-[#C9D1D9]/25 border border-[#C9D1D9]/60 rounded-xl text-xs text-[#C9D1D9]">
             This experiment belongs to application{' '}
             <span className="font-mono">{experiment.target_app_id}</span>, not the application in the URL.
             The backend does not scope experiments to the dashboard's selected application.
@@ -184,7 +184,7 @@ export const ExperimentDetail: React.FC = () => {
             className="lg:col-span-2"
             title="Definition"
             description="Stored configuration returned by GET /experiments/{id}"
-            icon={<FlaskConical className="w-4 h-4 text-[#8297AC]" />}
+            icon={<FlaskConical className="w-4 h-4 text-[#C9D1D9]" />}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <DetailRow label="Scenario" mono>
@@ -207,24 +207,24 @@ export const ExperimentDetail: React.FC = () => {
               </DetailRow>
               <DetailRow label="Created">
                 {formatDateTime(experiment.created_at)}{' '}
-                <span className="text-[#777A72]">({formatRelative(experiment.created_at)})</span>
+                <span className="text-[#B1BAC4]">({formatRelative(experiment.created_at)})</span>
               </DetailRow>
               <DetailRow label="Updated">{formatDateTime(experiment.updated_at)}</DetailRow>
             </div>
 
             {experiment.config_snapshot && Object.keys(experiment.config_snapshot).length > 0 && (
               <div className="mt-4">
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#B1BAC4] mb-1.5">
                   Config snapshot
                 </h3>
-                <pre className="p-3 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg text-[11px] font-mono overflow-x-auto">
+                <pre className="p-3 bg-[#000000] border border-[#30363D] rounded-lg text-[11px] font-mono overflow-x-auto">
                   {JSON.stringify(experiment.config_snapshot, null, 2)}
                 </pre>
               </div>
             )}
 
-            <div className="mt-4 p-3 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg text-xs text-[#61655b] leading-relaxed">
-              <span className="font-semibold text-[#343832] block mb-1">How this definition is used</span>
+            <div className="mt-4 p-3 bg-[#000000] border border-[#30363D] rounded-lg text-xs text-[#B1BAC4] leading-relaxed">
+              <span className="font-semibold text-[#F0F6FC] block mb-1">How this definition is used</span>
               A runner creates a run for this experiment with the application API key. Ordinary task
               executions are linked to a run only when the task is dispatched with{' '}
               <span className="font-mono">veriq_run_id</span> /{' '}
@@ -237,15 +237,15 @@ export const ExperimentDetail: React.FC = () => {
             <SectionCard
               title="Runs"
               description="Not available to the dashboard"
-              icon={<Lock className="w-4 h-4 text-[#777A72]" />}
+              icon={<Lock className="w-4 h-4 text-[#B1BAC4]" />}
             >
-              <div className="space-y-3 text-xs text-[#61655b] leading-relaxed">
+              <div className="space-y-3 text-xs text-[#B1BAC4] leading-relaxed">
                 <p>
                   The backend has no endpoint to list the runs of an experiment. Run and event reads are
                   scoped to the application API key and only addressable by run id.
                 </p>
-                <div className="p-3 bg-[#FAF8F3] border border-dashed border-[#E5E1D7] rounded-lg">
-                  <span className="font-semibold text-[#343832] block mb-1">Backend gap</span>
+                <div className="p-3 bg-[#000000] border border-dashed border-[#30363D] rounded-lg">
+                  <span className="font-semibold text-[#F0F6FC] block mb-1">Backend gap</span>
                   Needed for a dashboard runs table:{' '}
                   <span className="font-mono">GET /api/v1/experiments/&#123;id&#125;/runs</span> (unauthenticated,
                   paginated).
@@ -254,7 +254,7 @@ export const ExperimentDetail: React.FC = () => {
               </div>
             </SectionCard>
 
-            <div className="p-4 bg-[#8297AC]/8 border border-[#8297AC]/25 rounded-xl text-xs text-[#3b5168] flex items-start gap-2">
+            <div className="p-4 bg-[#C9D1D9]/8 border border-[#C9D1D9]/25 rounded-xl text-xs text-[#C9D1D9] flex items-start gap-2">
               <Info className="w-4 h-4 mt-0.5 shrink-0" />
               <p className="leading-relaxed">
                 This page intentionally shows no verdicts, invariants or failure-injection controls: the
@@ -264,12 +264,12 @@ export const ExperimentDetail: React.FC = () => {
 
             <Link
               to="/integration"
-              className="flex items-center justify-between gap-2 p-4 bg-[#FDFCFA] border border-[#E5E1D7] rounded-xl text-xs text-[#52564e] hover:border-[#D8C8AE] transition-colors"
+              className="flex items-center justify-between gap-2 p-4 bg-[#000000] border border-[#30363D] rounded-xl text-xs text-[#C9D1D9] hover:border-[#C9D1D9] transition-colors"
             >
               <span className="flex items-center gap-2">
-                <Terminal className="w-3.5 h-3.5 text-[#8297AC]" /> SDK integration guide
+                <Terminal className="w-3.5 h-3.5 text-[#C9D1D9]" /> SDK integration guide
               </span>
-              <span className="text-[#777A72]">→</span>
+              <span className="text-[#B1BAC4]">→</span>
             </Link>
           </div>
         </div>

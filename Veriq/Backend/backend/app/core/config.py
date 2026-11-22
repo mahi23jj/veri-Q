@@ -49,6 +49,14 @@ class Settings(BaseSettings):
         "http://host.docker.internal:8000",
         description="VeriQ API origin as seen from inside the isolated worker container.",
     )
+    RUNNER_SUBMIT_HOST: str = Field(
+        "",
+        description=(
+            "Host name this backend uses to reach a run's published broker/database "
+            "ports. Empty means auto-detect: host.docker.internal inside a container, "
+            "127.0.0.1 on the host."
+        ),
+    )
     RUNNER_AUTO_RECOVER: bool = Field(
         False,
         description="Finalize environments left behind by an interrupted backend on startup.",

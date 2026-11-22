@@ -120,7 +120,7 @@ export const TestRuns: React.FC = () => {
           eyebrow={
             <Link
               to={`/applications/${appId}/reliability`}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5f745b] hover:text-[#343832]"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to planning
             </Link>
@@ -129,13 +129,13 @@ export const TestRuns: React.FC = () => {
             <>
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
               <button
                 onClick={() => setRecoverOpen(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
                 title="Finalize runs left behind by an interrupted backend"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Recover interrupted
@@ -155,13 +155,13 @@ export const TestRuns: React.FC = () => {
                 }`
               : 'Loading…'
           }
-          icon={<Play className="w-4 h-4 text-[#8297AC]" />}
+          icon={<Play className="w-4 h-4 text-[#C9D1D9]" />}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={lifecycle}
                 onChange={(event) => setLifecycle(event.target.value)}
-                className="px-2.5 py-1.5 text-[11px] bg-white border border-[#E5E1D7] rounded-lg"
+                className="px-2.5 py-1.5 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg"
                 aria-label="Filter by lifecycle state"
               >
                 {LIFECYCLE_FILTERS.map((state) => (
@@ -173,7 +173,7 @@ export const TestRuns: React.FC = () => {
               <select
                 value={verdict}
                 onChange={(event) => setVerdict(event.target.value)}
-                className="px-2.5 py-1.5 text-[11px] bg-white border border-[#E5E1D7] rounded-lg"
+                className="px-2.5 py-1.5 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg"
                 aria-label="Filter by verdict"
               >
                 {VERDICT_FILTERS.map((value) => (
@@ -199,7 +199,7 @@ export const TestRuns: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                   <tr>
                     <th className="px-5 py-2.5 font-semibold">Run</th>
                     <th className="px-3 py-2.5 font-semibold">Case</th>
@@ -210,19 +210,19 @@ export const TestRuns: React.FC = () => {
                     <th className="px-3 py-2.5 font-semibold">Verdict</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E5E1D7]">
+                <tbody className="divide-y divide-[#30363D]">
                   {runs.map((run) => (
-                    <tr key={run.id} className="hover:bg-[#FAF8F3] transition-colors">
+                    <tr key={run.id} className="hover:bg-[#000000] transition-colors">
                       <td className="px-5 py-3">
                         <Link
                           to={`/applications/${appId}/reliability/runs/${run.id}`}
-                          className="font-mono text-[11px] text-[#343832] hover:text-[#5f745b]"
+                          className="font-mono text-[11px] text-[#F0F6FC] hover:text-[#C9D1D9]"
                         >
                           {shortId(run.id, 10)}
                         </Link>
                         {run.error_message && (
                           <div
-                            className="text-[10px] text-[#733e3f] truncate max-w-[220px]"
+                            className="text-[10px] text-[#FF7B72] truncate max-w-[220px]"
                             title={run.error_message}
                           >
                             {run.error_message}
@@ -230,19 +230,19 @@ export const TestRuns: React.FC = () => {
                         )}
                       </td>
                       <td className="px-3 py-3 max-w-[220px]">
-                        <span className="font-mono text-[11px] text-[#52564e] block truncate" title={run.case_key}>
+                        <span className="font-mono text-[11px] text-[#C9D1D9] block truncate" title={run.case_key}>
                           {run.case_key}
                         </span>
-                        <span className="text-[10px] text-[#777A72] font-mono">
+                        <span className="text-[10px] text-[#B1BAC4] font-mono">
                           {run.trigger_type}
                           {run.checkpoint_name ? ` · ${run.checkpoint_name}` : ''}
                         </span>
                       </td>
-                      <td className="px-3 py-3 font-mono text-[11px] text-[#52564e]">{run.scenario_id}</td>
-                      <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#777A72]">
+                      <td className="px-3 py-3 font-mono text-[11px] text-[#C9D1D9]">{run.scenario_id}</td>
+                      <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#B1BAC4]">
                         {formatDateTime(run.started_at ?? run.created_at)}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-[11px] font-mono text-[#52564e]">
+                      <td className="px-3 py-3 whitespace-nowrap text-[11px] font-mono text-[#C9D1D9]">
                         {duration(run)}
                       </td>
                       <td className="px-3 py-3">

@@ -105,18 +105,18 @@ export const Experiments: React.FC = () => {
         <PageHeader
           title="Reliability Experiments"
           description={`Experiment definitions for ${application?.name ?? 'this application'}. These are separate from ordinary task execution telemetry.`}
-          eyebrow={<span className="text-[11px] text-[#777A72] font-mono">GET /api/v1/experiments</span>}
+          eyebrow={<span className="text-[11px] text-[#B1BAC4] font-mono">GET /api/v1/experiments</span>}
           actions={
             <>
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
               <button
                 onClick={openCreate}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg shadow-2xs transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg shadow-2xs transition-all"
               >
                 <Plus className="w-4 h-4" /> New Experiment
               </button>
@@ -124,7 +124,7 @@ export const Experiments: React.FC = () => {
           }
         />
 
-        <div className="p-4 bg-[#D8C8AE]/25 border border-[#D8C8AE]/60 rounded-xl text-xs text-[#6b5a43] flex items-start gap-2.5">
+        <div className="p-4 bg-[#C9D1D9]/25 border border-[#C9D1D9]/60 rounded-xl text-xs text-[#C9D1D9] flex items-start gap-2.5">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="leading-relaxed space-y-1">
             <p>
@@ -146,7 +146,7 @@ export const Experiments: React.FC = () => {
         <SectionCard
           title="Experiment definitions"
           description={data ? `${data.total} definition${data.total === 1 ? '' : 's'}` : 'Loading…'}
-          icon={<FlaskConical className="w-4 h-4 text-[#8297AC]" />}
+          icon={<FlaskConical className="w-4 h-4 text-[#C9D1D9]" />}
           actions={
             <div className="flex items-center gap-1.5">
               {(['ALL', 'DRAFT'] as const).map((tab) => (
@@ -155,8 +155,8 @@ export const Experiments: React.FC = () => {
                   onClick={() => setStatusFilter(tab)}
                   className={`px-3 py-1 text-[11px] rounded-lg font-medium transition-colors ${
                     statusFilter === tab
-                      ? 'bg-[#879B83]/15 text-[#343832] border border-[#879B83]/30'
-                      : 'text-[#777A72] hover:bg-[#EFEEE7]'
+                      ? 'bg-[#C9D1D9]/15 text-[#F0F6FC] border border-[#C9D1D9]/30'
+                      : 'text-[#B1BAC4] hover:bg-[#161B22]'
                   }`}
                 >
                   {tab === 'ALL' ? 'All' : 'Draft'}
@@ -177,7 +177,7 @@ export const Experiments: React.FC = () => {
                 action={
                   <button
                     onClick={openCreate}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg"
                   >
                     <Plus className="w-3.5 h-3.5" /> New Experiment
                   </button>
@@ -188,7 +188,7 @@ export const Experiments: React.FC = () => {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                  <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                     <tr>
                       <th className="px-5 py-2.5 font-semibold">Experiment</th>
                       <th className="px-3 py-2.5 font-semibold">Task</th>
@@ -200,41 +200,41 @@ export const Experiments: React.FC = () => {
                       <th className="px-3 py-2.5" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E5E1D7]">
+                  <tbody className="divide-y divide-[#30363D]">
                     {visibleExperiments.map((experiment) => {
                       const isDraft = experiment.status === 'DRAFT';
                       return (
-                        <tr key={experiment.id} className="hover:bg-[#FAF8F3] transition-colors">
+                        <tr key={experiment.id} className="hover:bg-[#000000] transition-colors">
                           <td className="px-5 py-3 max-w-[280px]">
                             <Link
                               to={`/applications/${appId}/experiments/${experiment.id}`}
-                              className="block font-medium text-[#343832] hover:text-[#5f745b] truncate"
+                              className="block font-medium text-[#F0F6FC] hover:text-[#C9D1D9] truncate"
                               title={experiment.name}
                             >
                               {experiment.name}
                             </Link>
-                            <div className="text-[10px] text-[#777A72] mt-0.5 font-mono">
+                            <div className="text-[10px] text-[#B1BAC4] mt-0.5 font-mono">
                               {shortId(experiment.id, 10)}
                             </div>
                           </td>
                           <td className="px-3 py-3 max-w-[240px]">
-                            <div className="font-mono text-[11px] text-[#343832] truncate" title={experiment.task_name}>
+                            <div className="font-mono text-[11px] text-[#F0F6FC] truncate" title={experiment.task_name}>
                               {experiment.task_name}
                             </div>
                           </td>
                           <td className="px-3 py-3">
                             <Pill tone="blue">{experiment.scenario}</Pill>
                           </td>
-                          <td className="px-3 py-3 font-mono text-[11px] text-[#52564e]">
+                          <td className="px-3 py-3 font-mono text-[11px] text-[#C9D1D9]">
                             {experiment.checkpoint_name || '—'}
                           </td>
-                          <td className="px-3 py-3 font-mono text-[11px] text-[#52564e]">
+                          <td className="px-3 py-3 font-mono text-[11px] text-[#C9D1D9]">
                             {experiment.timeout_seconds}s
                           </td>
                           <td className="px-3 py-3">
                             <StatusBadge status={experiment.status} />
                           </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#777A72]">
+                          <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#B1BAC4]">
                             {formatRelative(experiment.created_at)}
                           </td>
                           <td className="px-3 py-3">
@@ -246,14 +246,14 @@ export const Experiments: React.FC = () => {
                                       setEditing(experiment);
                                       setIsModalOpen(true);
                                     }}
-                                    className="p-1.5 text-[#777A72] hover:text-[#343832] hover:bg-[#EFEEE7] rounded-md transition-colors"
+                                    className="p-1.5 text-[#B1BAC4] hover:text-[#F0F6FC] hover:bg-[#161B22] rounded-md transition-colors"
                                     title="Edit draft"
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={() => setDeleting(experiment)}
-                                    className="p-1.5 text-[#A46F70] hover:bg-[#A46F70]/15 rounded-md transition-colors"
+                                    className="p-1.5 text-[#F85149] hover:bg-[#F85149]/15 rounded-md transition-colors"
                                     title="Delete draft"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -262,7 +262,7 @@ export const Experiments: React.FC = () => {
                               )}
                               <Link
                                 to={`/applications/${appId}/experiments/${experiment.id}`}
-                                className="p-1.5 text-[#777A72] hover:text-[#343832] hover:bg-[#EFEEE7] rounded-md transition-colors"
+                                className="p-1.5 text-[#B1BAC4] hover:text-[#F0F6FC] hover:bg-[#161B22] rounded-md transition-colors"
                                 title="Inspect experiment"
                               >
                                 <ChevronRight className="w-4 h-4" />
@@ -282,14 +282,14 @@ export const Experiments: React.FC = () => {
           )}
         </SectionCard>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#777A72]">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#B1BAC4]">
           <span>
             Experiment events are stored separately from task execution events. This dashboard never merges
             them.
           </span>
           <Link
             to="/integration"
-            className="inline-flex items-center gap-1.5 font-medium text-[#5f745b] hover:text-[#343832]"
+            className="inline-flex items-center gap-1.5 font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
           >
             <Terminal className="w-3.5 h-3.5" /> SDK integration guide
           </Link>

@@ -26,7 +26,7 @@ const Settings = React.lazy(() => import('./src/pages/Settings'));
 const NotFound = React.lazy(() => import('./src/pages/NotFound'));
 
 const LoadingFallback: React.FC = () => (
-  <div className="min-h-screen bg-[#F7F5EF] flex items-center justify-center text-xs text-[#777A72] font-mono">
+  <div className="min-h-screen bg-[#000000] flex items-center justify-center text-xs text-[#B1BAC4] font-mono">
     Loading VeriQ dashboard…
   </div>
 );

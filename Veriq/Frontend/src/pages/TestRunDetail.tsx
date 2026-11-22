@@ -216,7 +216,7 @@ export const TestRunDetail: React.FC = () => {
           eyebrow={
             <Link
               to={`/applications/${appId}/reliability/runs`}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5f745b] hover:text-[#343832]"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to test runs
             </Link>
@@ -224,14 +224,14 @@ export const TestRunDetail: React.FC = () => {
           actions={
             <>
               {active && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] text-[#777A72] font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#8297AC] animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-[#B1BAC4] font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C9D1D9] animate-pulse" />
                   polling every 3s
                 </span>
               )}
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
@@ -239,7 +239,7 @@ export const TestRunDetail: React.FC = () => {
                 <button
                   onClick={() => setCancelOpen(true)}
                   disabled={!!run.cancel_requested_at || cancelling}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#A46F70] hover:bg-[#8f5d5e] rounded-lg disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#F85149] hover:bg-[#DA3633] rounded-lg disabled:opacity-50"
                   title={
                     run.cancel_requested_at
                       ? 'Cancellation already requested'
@@ -260,22 +260,22 @@ export const TestRunDetail: React.FC = () => {
         ) : (
           <>
             {run && (
-              <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl border border-[#E5E1D7] bg-[#FDFCFA]">
+              <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl border border-[#30363D] bg-[#000000]">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                  <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                     Lifecycle
                   </span>
                   <StatusBadge status={run.lifecycle_state} />
                 </div>
-                <div className="h-5 w-px bg-[#E5E1D7]" />
+                <div className="h-5 w-px bg-[#30363D]" />
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                  <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                     Reliability verdict
                   </span>
                   <VerdictBadge verdict={run.verdict} large />
                 </div>
-                <div className="h-5 w-px bg-[#E5E1D7] hidden sm:block" />
-                <span className="text-[11px] text-[#777A72] font-mono">
+                <div className="h-5 w-px bg-[#30363D] hidden sm:block" />
+                <span className="text-[11px] text-[#B1BAC4] font-mono">
                   trigger {run.trigger_type}
                   {run.checkpoint_name ? ` · ${run.checkpoint_name}` : ''}
                 </span>
@@ -286,11 +286,11 @@ export const TestRunDetail: React.FC = () => {
             )}
 
             {run?.error_message && (
-              <div className="p-4 rounded-xl border border-[#A46F70]/30 bg-[#A46F70]/10 flex items-start gap-2.5">
-                <TriangleAlert className="w-4 h-4 text-[#A46F70] mt-0.5 shrink-0" />
+              <div className="p-4 rounded-xl border border-[#F85149]/30 bg-[#F85149]/10 flex items-start gap-2.5">
+                <TriangleAlert className="w-4 h-4 text-[#F85149] mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs font-semibold text-[#733e3f]">Runner reported an error</p>
-                  <p className="text-[11px] text-[#733e3f]/90 mt-0.5 break-words">
+                  <p className="text-xs font-semibold text-[#FF7B72]">Runner reported an error</p>
+                  <p className="text-[11px] text-[#FF7B72]/90 mt-0.5 break-words">
                     {run.error_message}
                   </p>
                 </div>
@@ -302,7 +302,7 @@ export const TestRunDetail: React.FC = () => {
                 <SectionCard
                   title="Lifecycle"
                   description="Backend state progression"
-                  icon={<Activity className="w-4 h-4 text-[#8297AC]" />}
+                  icon={<Activity className="w-4 h-4 text-[#C9D1D9]" />}
                 >
                   <LifecycleProgress state={run?.lifecycle_state ?? 'PENDING'} />
                   <div className="mt-4 grid grid-cols-1 gap-2">
@@ -323,25 +323,25 @@ export const TestRunDetail: React.FC = () => {
                 <SectionCard
                   title="Verdict"
                   description="Recorded by the backend evaluator"
-                  icon={<Gauge className="w-4 h-4 text-[#879B83]" />}
+                  icon={<Gauge className="w-4 h-4 text-[#C9D1D9]" />}
                 >
                   <div className="flex items-center gap-2">
                     <VerdictBadge verdict={run?.verdict ?? null} large />
                   </div>
-                  <p className="mt-3 text-[11px] text-[#52564e] leading-relaxed">
+                  <p className="mt-3 text-[11px] text-[#C9D1D9] leading-relaxed">
                     {verdictExplanation(run?.verdict ?? null)}
                   </p>
                   {reasons.length > 0 ? (
                     <ul className="mt-3 space-y-1.5">
                       {reasons.map((reason, index) => (
-                        <li key={`${reason.code ?? 'reason'}-${index}`} className="text-[11px] text-[#733e3f] leading-relaxed">
+                        <li key={`${reason.code ?? 'reason'}-${index}`} className="text-[11px] text-[#FF7B72] leading-relaxed">
                           <span className="font-mono text-[10px]">{reason.code ?? 'reason'}: </span>
                           {reason.message ?? ''}
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-2 text-[11px] text-[#777A72]">
+                    <p className="mt-2 text-[11px] text-[#B1BAC4]">
                       {run?.verdict ? 'The backend returned no additional reasons.' : 'No verdict yet.'}
                     </p>
                   )}
@@ -350,7 +350,7 @@ export const TestRunDetail: React.FC = () => {
                       {checks.map((check, index) => (
                         <div
                           key={`${check.check ?? 'check'}-${index}`}
-                          className={`text-[11px] ${check.ok ? 'text-[#3e563a]' : 'text-[#733e3f]'}`}
+                          className={`text-[11px] ${check.ok ? 'text-[#3e563a]' : 'text-[#FF7B72]'}`}
                         >
                           {check.ok ? '✓' : '✕'} {check.check ?? 'check'}
                           {check.detail ? ` — ${check.detail}` : ''}
@@ -358,7 +358,7 @@ export const TestRunDetail: React.FC = () => {
                       ))}
                     </div>
                   )}
-                  <p className="mt-3 pt-3 border-t border-[#E5E1D7] text-[10px] text-[#777A72] leading-relaxed">
+                  <p className="mt-3 pt-3 border-t border-[#30363D] text-[10px] text-[#B1BAC4] leading-relaxed">
                     Scope: execution-level recovery only. A PASS does not prove payment correctness,
                     exactly-once delivery, absence of duplicate business effects or overall business-data
                     correctness.
@@ -368,10 +368,10 @@ export const TestRunDetail: React.FC = () => {
                 <SectionCard
                   title="Environment"
                   description="Isolated runner resources and cleanup"
-                  icon={<Boxes className="w-4 h-4 text-[#8297AC]" />}
+                  icon={<Boxes className="w-4 h-4 text-[#C9D1D9]" />}
                 >
                   {!environment ? (
-                    <p className="text-[11px] text-[#777A72]">
+                    <p className="text-[11px] text-[#B1BAC4]">
                       No environment has been provisioned for this run yet.
                     </p>
                   ) : (
@@ -387,23 +387,23 @@ export const TestRunDetail: React.FC = () => {
                         </DetailRow>
                       </div>
                       {environment.error && (
-                        <p className="text-[11px] text-[#733e3f]">{environment.error}</p>
+                        <p className="text-[11px] text-[#FF7B72]">{environment.error}</p>
                       )}
                       {environment.cleanup_error && (
-                        <p className="text-[11px] text-[#733e3f]">
+                        <p className="text-[11px] text-[#FF7B72]">
                           Cleanup error: {environment.cleanup_error}
                         </p>
                       )}
                       {readiness.length > 0 ? (
                         <div className="pt-2">
-                          <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                          <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                             Readiness checks
                           </span>
                           <div className="mt-1 space-y-1">
                             {readiness.map((check, index) => (
                               <div
                                 key={`${check.check ?? 'check'}-${index}`}
-                                className={`text-[11px] ${check.ok ? 'text-[#3e563a]' : 'text-[#733e3f]'}`}
+                                className={`text-[11px] ${check.ok ? 'text-[#3e563a]' : 'text-[#FF7B72]'}`}
                               >
                                 {check.ok ? '✓' : '✕'} {check.check ?? 'check'}
                                 {check.detail ? ` — ${check.detail}` : ''}
@@ -413,12 +413,12 @@ export const TestRunDetail: React.FC = () => {
                         </div>
                       ) : (
                         environment.readiness && (
-                          <pre className="p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10px] font-mono overflow-x-auto">
+                          <pre className="p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto">
                             {prettyJson(environment.readiness)}
                           </pre>
                         )
                       )}
-                      <p className="text-[10px] text-[#777A72]">
+                      <p className="text-[10px] text-[#B1BAC4]">
                         Cleaned at {formatDateTime(environment.cleaned_at)} · stopped at{' '}
                         {formatDateTime(environment.stopped_at)}
                       </p>
@@ -431,7 +431,7 @@ export const TestRunDetail: React.FC = () => {
                 <SectionCard
                   title="Failure injection"
                   description="Configured is not activated: ARMED means prepared, ACTIVE means the trigger matched"
-                  icon={<ShieldAlert className="w-4 h-4 text-[#A46F70]" />}
+                  icon={<ShieldAlert className="w-4 h-4 text-[#F85149]" />}
                   bodyClassName="p-0"
                 >
                   {(detail?.fault_events.length ?? 0) === 0 ? (
@@ -443,23 +443,23 @@ export const TestRunDetail: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className="divide-y divide-[#E5E1D7]">
+                    <div className="divide-y divide-[#30363D]">
                       {detail?.fault_events.map((fault) => (
                         <div key={fault.id} className="px-5 py-3 space-y-1.5">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-xs font-semibold text-[#343832] font-mono">
+                              <span className="text-xs font-semibold text-[#F0F6FC] font-mono">
                                 {fault.scenario_id}
                               </span>
                               <FaultStateBadge state={fault.state} />
                               <Pill tone="muted">{fault.injector_type}</Pill>
                               <Pill tone="muted">trigger {fault.trigger_type}</Pill>
                             </div>
-                            <span className="text-[10px] text-[#777A72] font-mono">
+                            <span className="text-[10px] text-[#B1BAC4] font-mono">
                               {formatDateTime(fault.occurred_at)}
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px] text-[#777A72]">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px] text-[#B1BAC4]">
                             <span>
                               activation: <span className="font-mono">{formatTime(fault.activation_at)}</span>
                             </span>
@@ -471,14 +471,14 @@ export const TestRunDetail: React.FC = () => {
                             </span>
                           </div>
                           {fault.error && (
-                            <p className="text-[11px] text-[#733e3f]">Injector error: {fault.error}</p>
+                            <p className="text-[11px] text-[#FF7B72]">Injector error: {fault.error}</p>
                           )}
                           {fault.detail && (
                             <details>
-                              <summary className="text-[10px] text-[#777A72] cursor-pointer">
+                              <summary className="text-[10px] text-[#B1BAC4] cursor-pointer">
                                 Injector detail
                               </summary>
-                              <pre className="mt-1 p-2 rounded bg-[#FAF8F3] border border-[#E5E1D7] text-[10px] font-mono overflow-x-auto">
+                              <pre className="mt-1 p-2 rounded bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto">
                                 {prettyJson(fault.detail)}
                               </pre>
                             </details>
@@ -492,7 +492,7 @@ export const TestRunDetail: React.FC = () => {
                 <SectionCard
                   title="Execution attempts"
                   description="Correlated ordinary task executions reported by the SDK"
-                  icon={<Activity className="w-4 h-4 text-[#8297AC]" />}
+                  icon={<Activity className="w-4 h-4 text-[#C9D1D9]" />}
                   bodyClassName="p-0"
                 >
                   {(detail?.observed_attempts.length ?? 0) === 0 ? (
@@ -506,7 +506,7 @@ export const TestRunDetail: React.FC = () => {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                        <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                           <tr>
                             <th className="px-5 py-2 font-semibold">Observed order</th>
                             <th className="px-3 py-2 font-semibold">status</th>
@@ -517,33 +517,33 @@ export const TestRunDetail: React.FC = () => {
                             <th className="px-3 py-2 font-semibold">Duration</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E5E1D7]">
+                        <tbody className="divide-y divide-[#30363D]">
                           {detail?.observed_attempts.map((attempt, index) => (
-                            <tr key={attempt.execution_id} className="hover:bg-[#FAF8F3]">
-                              <td className="px-5 py-2.5 font-mono text-[11px] text-[#52564e]">
+                            <tr key={attempt.execution_id} className="hover:bg-[#000000]">
+                              <td className="px-5 py-2.5 font-mono text-[11px] text-[#C9D1D9]">
                                 #{index + 1}
                               </td>
                               <td className="px-3 py-2.5">
                                 <StatusBadge status={attempt.status} />
                               </td>
-                              <td className="px-3 py-2.5 font-mono text-[10.5px] text-[#52564e] max-w-[160px] truncate">
+                              <td className="px-3 py-2.5 font-mono text-[10.5px] text-[#C9D1D9] max-w-[160px] truncate">
                                 {attempt.celery_task_id ?? '—'}
                               </td>
                               <td className="px-3 py-2.5">
                                 <Link
                                   to={`/applications/${appId}/executions/${attempt.execution_id}`}
-                                  className="font-mono text-[10.5px] text-[#5f745b] hover:text-[#343832]"
+                                  className="font-mono text-[10.5px] text-[#C9D1D9] hover:text-[#F0F6FC]"
                                 >
                                   {shortId(attempt.execution_id, 10)}
                                 </Link>
                               </td>
-                              <td className="px-3 py-2.5 font-mono text-[10.5px] text-[#52564e] max-w-[140px] truncate">
+                              <td className="px-3 py-2.5 font-mono text-[10.5px] text-[#C9D1D9] max-w-[140px] truncate">
                                 {attempt.worker_instance_id ?? '—'}
                               </td>
-                              <td className="px-3 py-2.5 text-[11px] text-[#777A72] whitespace-nowrap">
+                              <td className="px-3 py-2.5 text-[11px] text-[#B1BAC4] whitespace-nowrap">
                                 {formatDateTime(attempt.started_at)}
                               </td>
-                              <td className="px-3 py-2.5 font-mono text-[11px] text-[#52564e]">
+                              <td className="px-3 py-2.5 font-mono text-[11px] text-[#C9D1D9]">
                                 {attemptDuration(attempt)}
                               </td>
                             </tr>
@@ -552,7 +552,7 @@ export const TestRunDetail: React.FC = () => {
                       </table>
                     </div>
                   )}
-                  <p className="px-5 py-2.5 text-[10px] text-[#777A72] border-t border-[#E5E1D7]">
+                  <p className="px-5 py-2.5 text-[10px] text-[#B1BAC4] border-t border-[#30363D]">
                     Order follows the backend's correlated attempt list. Retry requests are counted
                     separately from subsequent attempts below.
                   </p>
@@ -561,10 +561,10 @@ export const TestRunDetail: React.FC = () => {
                 <SectionCard
                   title="Recovery observations"
                   description="Retry requests and later attempts are distinct measurements"
-                  icon={<Clock className="w-4 h-4 text-[#8297AC]" />}
+                  icon={<Clock className="w-4 h-4 text-[#C9D1D9]" />}
                 >
                   {!recovery ? (
-                    <p className="text-[11px] text-[#777A72]">
+                    <p className="text-[11px] text-[#B1BAC4]">
                       The evaluator has not recorded a recovery observation yet.
                     </p>
                   ) : (
@@ -598,15 +598,15 @@ export const TestRunDetail: React.FC = () => {
                       </DetailRow>
                       {recovery.error && (
                         <div className="col-span-2 md:col-span-4">
-                          <p className="text-[11px] text-[#733e3f]">Observation error: {recovery.error}</p>
+                          <p className="text-[11px] text-[#FF7B72]">Observation error: {recovery.error}</p>
                         </div>
                       )}
                       <div className="col-span-2 md:col-span-4">
                         <details>
-                          <summary className="text-[10px] text-[#777A72] cursor-pointer">
+                          <summary className="text-[10px] text-[#B1BAC4] cursor-pointer">
                             Observation payload
                           </summary>
-                          <pre className="mt-1 p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10px] font-mono overflow-x-auto">
+                          <pre className="mt-1 p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto">
                             {prettyJson(recovery.observation)}
                           </pre>
                         </details>
@@ -621,7 +621,7 @@ export const TestRunDetail: React.FC = () => {
               <SectionCard
                 title="Timeline"
                 description="Runtime and injector events ordered by their backend timestamps"
-                icon={<Clock className="w-4 h-4 text-[#8297AC]" />}
+                icon={<Clock className="w-4 h-4 text-[#C9D1D9]" />}
                 bodyClassName="p-0"
               >
                 {timeline.length === 0 ? (
@@ -633,26 +633,26 @@ export const TestRunDetail: React.FC = () => {
                     />
                   </div>
                 ) : (
-                  <ol className="divide-y divide-[#E5E1D7]">
+                  <ol className="divide-y divide-[#30363D]">
                     {timeline.map((event) => (
                       <li key={event.key} className="px-5 py-2.5">
                         <div className="flex items-start gap-3">
-                          <span className="font-mono text-[10px] text-[#777A72] pt-0.5 w-16 shrink-0">
+                          <span className="font-mono text-[10px] text-[#B1BAC4] pt-0.5 w-16 shrink-0">
                             {formatTime(event.at)}
                           </span>
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="text-[11px] font-medium text-[#343832]">
+                              <span className="text-[11px] font-medium text-[#F0F6FC]">
                                 {event.label.replace(/_/g, ' ')}
                               </span>
                               <Pill tone="muted">{event.source}</Pill>
                             </div>
                             {event.payload && Object.keys(event.payload).length > 0 && (
                               <details className="mt-0.5">
-                                <summary className="text-[10px] text-[#777A72] cursor-pointer">
+                                <summary className="text-[10px] text-[#B1BAC4] cursor-pointer">
                                   payload
                                 </summary>
-                                <pre className="mt-1 p-2 rounded bg-[#FAF8F3] border border-[#E5E1D7] text-[10px] font-mono overflow-x-auto">
+                                <pre className="mt-1 p-2 rounded bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto">
                                   {prettyJson(event.payload)}
                                 </pre>
                               </details>
@@ -668,7 +668,7 @@ export const TestRunDetail: React.FC = () => {
               <SectionCard
                 title="Configuration snapshot"
                 description="Frozen at run creation from the approved revision"
-                icon={<FileJson className="w-4 h-4 text-[#8297AC]" />}
+                icon={<FileJson className="w-4 h-4 text-[#C9D1D9]" />}
               >
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   <DetailRow label="Case" mono>
@@ -684,7 +684,7 @@ export const TestRunDetail: React.FC = () => {
                     {shortId(run?.test_plan_revision_id, 10)}
                   </DetailRow>
                 </div>
-                <pre className="p-3 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10px] font-mono overflow-x-auto max-h-72">
+                <pre className="p-3 rounded-lg bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto max-h-72">
                   {prettyJson(configuration)}
                 </pre>
               </SectionCard>
@@ -693,7 +693,7 @@ export const TestRunDetail: React.FC = () => {
             <SectionCard
               title="Dedicated workers"
               description="Runner-managed workers for this isolated environment"
-              icon={<Server className="w-4 h-4 text-[#8297AC]" />}
+              icon={<Server className="w-4 h-4 text-[#C9D1D9]" />}
               bodyClassName="p-0"
             >
               {(detail?.workers.length ?? 0) === 0 ? (
@@ -707,7 +707,7 @@ export const TestRunDetail: React.FC = () => {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                    <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                       <tr>
                         <th className="px-5 py-2 font-semibold">Worker</th>
                         <th className="px-3 py-2 font-semibold">Queue</th>
@@ -717,28 +717,28 @@ export const TestRunDetail: React.FC = () => {
                         <th className="px-3 py-2 font-semibold">Terminated</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E5E1D7]">
+                    <tbody className="divide-y divide-[#30363D]">
                       {detail?.workers.map((worker) => (
                         <tr key={worker.id}>
-                          <td className="px-5 py-2.5 font-mono text-[11px] text-[#52564e]">
+                          <td className="px-5 py-2.5 font-mono text-[11px] text-[#C9D1D9]">
                             {worker.hostname ?? worker.worker_key}
                             {worker.error && (
-                              <div className="text-[10px] text-[#733e3f]">{worker.error}</div>
+                              <div className="text-[10px] text-[#FF7B72]">{worker.error}</div>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 font-mono text-[11px] text-[#52564e]">
+                          <td className="px-3 py-2.5 font-mono text-[11px] text-[#C9D1D9]">
                             {worker.queue_name}
                           </td>
                           <td className="px-3 py-2.5">
                             <StatusBadge status={worker.lifecycle_state} />
                           </td>
-                          <td className="px-3 py-2.5 text-[11px] text-[#777A72]">
+                          <td className="px-3 py-2.5 text-[11px] text-[#B1BAC4]">
                             {formatDateTime(worker.started_at)}
                           </td>
-                          <td className="px-3 py-2.5 text-[11px] text-[#777A72]">
+                          <td className="px-3 py-2.5 text-[11px] text-[#B1BAC4]">
                             {formatDateTime(worker.ready_at)}
                           </td>
-                          <td className="px-3 py-2.5 text-[11px] text-[#777A72]">
+                          <td className="px-3 py-2.5 text-[11px] text-[#B1BAC4]">
                             {formatDateTime(worker.terminated_at)}
                             {worker.termination_reason && (
                               <div className="text-[10px]">{worker.termination_reason}</div>
@@ -752,10 +752,10 @@ export const TestRunDetail: React.FC = () => {
               )}
             </SectionCard>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#777A72]">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#B1BAC4]">
               <Link
                 to={`/applications/${appId}/executions`}
-                className="inline-flex items-center gap-1.5 font-medium text-[#5f745b] hover:text-[#343832]"
+                className="inline-flex items-center gap-1.5 font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
               >
                 <FlaskConical className="w-3.5 h-3.5" /> Ordinary execution telemetry
               </Link>

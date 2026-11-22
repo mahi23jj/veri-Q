@@ -18,11 +18,11 @@ export const PageHeader: React.FC<{
   eyebrow?: React.ReactNode;
   actions?: React.ReactNode;
 }> = ({ title, description, eyebrow, actions }) => (
-  <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#E5E1D7]">
+  <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#30363D]">
     <div className="min-w-0">
       {eyebrow && <div className="mb-1.5">{eyebrow}</div>}
-      <h1 className="font-serif font-bold text-2xl md:text-3xl text-[#343832] tracking-tight">{title}</h1>
-      {description && <p className="text-xs md:text-sm text-[#777A72] mt-1 max-w-3xl">{description}</p>}
+      <h1 className="font-serif font-bold text-2xl md:text-3xl text-[#F0F6FC] tracking-tight">{title}</h1>
+      {description && <p className="text-xs md:text-sm text-[#B1BAC4] mt-1 max-w-3xl">{description}</p>}
     </div>
     {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
   </div>
@@ -31,7 +31,7 @@ export const PageHeader: React.FC<{
 /* -------------------------------------------------------------- async states */
 
 export const LoadingState: React.FC<{ label?: string }> = ({ label = 'Loading…' }) => (
-  <div className="flex items-center justify-center gap-2 py-12 text-xs text-[#777A72] font-mono">
+  <div className="flex items-center justify-center gap-2 py-12 text-xs text-[#B1BAC4] font-mono">
     <Loader2 className="w-4 h-4 animate-spin" />
     {label}
   </div>
@@ -41,16 +41,16 @@ export const ErrorState: React.FC<{ message: string; onRetry?: () => void }> = (
   message,
   onRetry,
 }) => (
-  <div className="p-5 bg-[#A46F70]/10 border border-[#A46F70]/30 rounded-xl flex items-start gap-3">
-    <AlertCircle className="w-4 h-4 text-[#A46F70] mt-0.5 shrink-0" />
+  <div className="p-5 bg-[#F85149]/10 border border-[#F85149]/30 rounded-xl flex items-start gap-3">
+    <AlertCircle className="w-4 h-4 text-[#F85149] mt-0.5 shrink-0" />
     <div className="min-w-0 flex-1">
-      <p className="text-sm font-medium text-[#733e3f]">Request failed</p>
-      <p className="text-xs text-[#733e3f]/80 mt-0.5 break-words">{message}</p>
+      <p className="text-sm font-medium text-[#FF7B72]">Request failed</p>
+      <p className="text-xs text-[#FF7B72]/80 mt-0.5 break-words">{message}</p>
     </div>
     {onRetry && (
       <button
         onClick={onRetry}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#733e3f] bg-white border border-[#A46F70]/30 rounded-lg hover:bg-[#A46F70]/10 transition-colors shrink-0"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#FF7B72] bg-[#000000] border border-[#F85149]/30 rounded-lg hover:bg-[#F85149]/10 transition-colors shrink-0"
       >
         <RotateCcw className="w-3.5 h-3.5" />
         Retry
@@ -65,12 +65,12 @@ export const EmptyState: React.FC<{
   icon?: React.ReactNode;
   action?: React.ReactNode;
 }> = ({ title, description, icon, action }) => (
-  <div className="p-8 text-center border border-dashed border-[#E5E1D7] rounded-xl bg-[#FAF8F3]">
-    <div className="w-10 h-10 rounded-full bg-[#EFEEE7] text-[#777A72] flex items-center justify-center mx-auto mb-3">
+  <div className="p-8 text-center border border-dashed border-[#30363D] rounded-xl bg-[#000000]">
+    <div className="w-10 h-10 rounded-full bg-[#161B22] text-[#B1BAC4] flex items-center justify-center mx-auto mb-3">
       {icon ?? <Inbox className="w-5 h-5" />}
     </div>
-    <p className="text-sm font-medium text-[#343832]">{title}</p>
-    {description && <p className="text-xs text-[#777A72] mt-1 max-w-md mx-auto leading-relaxed">{description}</p>}
+    <p className="text-sm font-medium text-[#F0F6FC]">{title}</p>
+    {description && <p className="text-xs text-[#B1BAC4] mt-1 max-w-md mx-auto leading-relaxed">{description}</p>}
     {action && <div className="mt-4 flex justify-center">{action}</div>}
   </div>
 );
@@ -80,11 +80,11 @@ export const EmptyState: React.FC<{
 type BadgeTone = 'sage' | 'rose' | 'blue' | 'beige' | 'muted';
 
 const TONES: Record<BadgeTone, string> = {
-  sage: 'bg-[#879B83]/15 text-[#3e563a] border-[#879B83]/30',
-  rose: 'bg-[#A46F70]/15 text-[#733e3f] border-[#A46F70]/30',
-  blue: 'bg-[#8297AC]/15 text-[#3b5168] border-[#8297AC]/30',
-  beige: 'bg-[#D8C8AE]/30 text-[#6b5a43] border-[#D8C8AE]/60',
-  muted: 'bg-[#777A72]/12 text-[#4e5149] border-[#777A72]/25',
+  sage: 'bg-[#56D364]/15 text-[#56D364] border-[#56D364]/30',
+  rose: 'bg-[#F85149]/15 text-[#FF7B72] border-[#F85149]/30',
+  blue: 'bg-[#D29922]/15 text-[#E3B341] border-[#D29922]/30',
+  beige: 'bg-[#D29922]/15 text-[#E3B341] border-[#D29922]/30',
+  muted: 'bg-[#B1BAC4]/12 text-[#B1BAC4] border-[#B1BAC4]/25',
 };
 
 function toneForStatus(status: string): BadgeTone {
@@ -185,22 +185,22 @@ export const Pagination: React.FC<{
   const canNext = skip + limit < total;
 
   return (
-    <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#E5E1D7]">
-      <span className="text-[11px] text-[#777A72] font-mono">
+    <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#30363D]">
+      <span className="text-[11px] text-[#B1BAC4] font-mono">
         {from}–{to} of {total}
       </span>
       <div className="flex items-center gap-1.5">
         <button
           onClick={() => onChange(Math.max(0, skip - limit))}
           disabled={!canPrev}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[#E5E1D7] bg-white text-[#52564e] enabled:hover:bg-[#EFEEE7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[#30363D] bg-[#000000] text-[#C9D1D9] enabled:hover:bg-[#161B22] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-3.5 h-3.5" /> Previous
         </button>
         <button
           onClick={() => onChange(skip + limit)}
           disabled={!canNext}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[#E5E1D7] bg-white text-[#52564e] enabled:hover:bg-[#EFEEE7] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[#30363D] bg-[#000000] text-[#C9D1D9] enabled:hover:bg-[#161B22] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Next <ChevronRight className="w-3.5 h-3.5" />
         </button>
@@ -228,7 +228,7 @@ export const CopyButton: React.FC<{ value: string; label?: string }> = ({ value,
     <button
       type="button"
       onClick={copy}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors shrink-0"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors shrink-0"
       title="Copy to clipboard"
     >
       {copied ? <Check className="w-3.5 h-3.5 text-[#3e563a]" /> : <Copy className="w-3.5 h-3.5" />}
@@ -242,14 +242,14 @@ export const CodeBlock: React.FC<{ code: string; language?: string; label?: stri
   language = 'bash',
   label,
 }) => (
-  <div className="rounded-lg border border-[#E5E1D7] overflow-hidden bg-[#FAF8F3]">
-    <div className="flex items-center justify-between px-3 py-2 border-b border-[#E5E1D7] bg-[#FDFCFA]">
-      <span className="text-[10px] uppercase tracking-wider font-mono text-[#777A72]">
+  <div className="rounded-lg border border-[#30363D] overflow-hidden bg-[#000000]">
+    <div className="flex items-center justify-between px-3 py-2 border-b border-[#30363D] bg-[#000000]">
+      <span className="text-[10px] uppercase tracking-wider font-mono text-[#B1BAC4]">
         {label ?? language}
       </span>
       <CopyButton value={code} />
     </div>
-    <pre className="p-3.5 overflow-x-auto text-[11.5px] leading-relaxed text-[#343832] font-mono whitespace-pre">
+    <pre className="p-3.5 overflow-x-auto text-[11.5px] leading-relaxed text-[#F0F6FC] font-mono whitespace-pre">
       {code}
     </pre>
   </div>
@@ -261,10 +261,10 @@ export const DetailRow: React.FC<{
   mono?: boolean;
   className?: string;
 }> = ({ label, children, mono, className }) => (
-  <div className={`p-3 bg-[#FAF8F3] rounded-lg border border-[#E5E1D7] min-w-0 ${className ?? ''}`}>
-    <span className="text-[#777A72] block text-[11px]">{label}</span>
+  <div className={`p-3 bg-[#000000] rounded-lg border border-[#30363D] min-w-0 ${className ?? ''}`}>
+    <span className="text-[#B1BAC4] block text-[11px]">{label}</span>
     <span
-      className={`mt-0.5 block text-[#343832] break-words ${mono ? 'font-mono text-[11.5px]' : 'text-xs font-medium'}`}
+      className={`mt-0.5 block text-[#F0F6FC] break-words ${mono ? 'font-mono text-[11.5px]' : 'text-xs font-medium'}`}
     >
       {children}
     </span>
@@ -280,13 +280,13 @@ export const SectionCard: React.FC<{
   className?: string;
   bodyClassName?: string;
 }> = ({ title, description, icon, actions, children, className, bodyClassName }) => (
-  <section className={`bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-2xs ${className ?? ''}`}>
-    <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-b border-[#E5E1D7]">
+  <section className={`bg-[#000000] rounded-xl border border-[#30363D] shadow-2xs ${className ?? ''}`}>
+    <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-b border-[#30363D]">
       <div className="flex items-center gap-2 min-w-0">
         {icon}
         <div className="min-w-0">
-          <h2 className="font-serif font-bold text-base text-[#343832] truncate">{title}</h2>
-          {description && <p className="text-[11px] text-[#777A72]">{description}</p>}
+          <h2 className="font-serif font-bold text-base text-[#F0F6FC] truncate">{title}</h2>
+          {description && <p className="text-[11px] text-[#B1BAC4]">{description}</p>}
         </div>
       </div>
       {actions}

@@ -17,7 +17,15 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       APP_ENV: ${APP_ENV:-development}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      RUNNER_ENABLED: ${RUNNER_ENABLED:-true}
+      RUNNER_CALLBACK_BASE_URL: ${RUNNER_CALLBACK_BASE_URL:-http://host.docker.internal:8000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
+    # The reliability runner starts isolated per-run containers through the
+    # Docker socket and reaches their published ports through the host gateway.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   

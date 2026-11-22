@@ -132,7 +132,7 @@ export const ReliabilityPlan: React.FC = () => {
           eyebrow={
             <Link
               to={`/applications/${appId}/reliability`}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5f745b] hover:text-[#343832]"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to reliability planning
             </Link>
@@ -141,14 +141,14 @@ export const ReliabilityPlan: React.FC = () => {
             <>
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
               <button
                 onClick={() => runAction('generate')}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg disabled:opacity-60"
               >
                 <FlaskConical className="w-3.5 h-3.5" />
                 {busy === 'generate' ? 'Generating…' : 'Generate matrix'}
@@ -163,44 +163,44 @@ export const ReliabilityPlan: React.FC = () => {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="p-4 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7]">
-                <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
+                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                   Plan status
                 </span>
                 <div className="mt-1.5">
                   <StatusBadge status={plan?.status} />
                 </div>
               </div>
-              <div className="p-4 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7]">
-                <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
+                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                   Current revision
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#343832]">
+                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">
                   {plan?.current_revision || '—'}
                 </div>
-                <div className="text-[10px] text-[#777A72]">
+                <div className="text-[10px] text-[#B1BAC4]">
                   {plan?.latest_revision
                     ? formatRelative(plan.latest_revision.created_at)
                     : 'not generated'}
                 </div>
               </div>
-              <div className="p-4 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7]">
-                <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
+                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                   Approved revision
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#343832]">
+                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">
                   {plan?.approved_revision ?? 'None'}
                 </div>
-                <div className="text-[10px] text-[#777A72]">
+                <div className="text-[10px] text-[#B1BAC4]">
                   {plan?.approved_at ? formatDateTime(plan.approved_at) : 'not approved'}
                 </div>
               </div>
-              <div className="p-4 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7]">
-                <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
+                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                   Test cases
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#343832]">{cases.length}</div>
-                <div className="text-[10px] text-[#777A72]">
+                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">{cases.length}</div>
+                <div className="text-[10px] text-[#B1BAC4]">
                   {cases.filter((item) => item.status === 'READY').length} ready ·{' '}
                   {cases.filter((item) => item.status !== 'READY').length} blocked
                 </div>
@@ -210,20 +210,20 @@ export const ReliabilityPlan: React.FC = () => {
             <SectionCard
               title="Review and approval"
               description="Approval is bound to one immutable revision; any later change invalidates it"
-              icon={<ShieldCheck className="w-4 h-4 text-[#879B83]" />}
+              icon={<ShieldCheck className="w-4 h-4 text-[#C9D1D9]" />}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => runAction('validate')}
                   disabled={busy !== null || !plan?.current_revision}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] disabled:opacity-40"
                 >
                   Validate revision
                 </button>
                 <button
                   onClick={() => runAction('submit')}
                   disabled={busy !== null || plan?.status !== 'VALIDATING'}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] disabled:opacity-40"
                   title="Only VALIDATING plans can be submitted"
                 >
                   Submit for review
@@ -231,7 +231,7 @@ export const ReliabilityPlan: React.FC = () => {
                 <button
                   onClick={() => runAction('approve')}
                   disabled={busy !== null || plan?.status !== 'READY_FOR_REVIEW'}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg disabled:opacity-40"
                   title="Only READY_FOR_REVIEW plans can be approved"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -240,32 +240,32 @@ export const ReliabilityPlan: React.FC = () => {
                 <button
                   onClick={() => runAction('revoke')}
                   disabled={busy !== null || !plan?.approved_revision}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#733e3f] bg-white border border-[#A46F70]/30 rounded-lg hover:bg-[#A46F70]/10 disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#FF7B72] bg-[#000000] border border-[#F85149]/30 rounded-lg hover:bg-[#F85149]/10 disabled:opacity-40"
                 >
                   <Ban className="w-3.5 h-3.5" /> Revoke approval
                 </button>
               </div>
 
-              <p className="mt-3 text-[11px] text-[#777A72] leading-relaxed">
+              <p className="mt-3 text-[11px] text-[#B1BAC4] leading-relaxed">
                 A plan must be generated, validated, submitted and approved before a test case can run.
                 If the configuration changes after approval, the backend clears the approval instead of
                 presenting a stale approved revision.
               </p>
               {!runnerEnabled && data && (
-                <p className="mt-3 p-3 rounded-lg bg-[#D8C8AE]/25 border border-[#D8C8AE]/60 text-[11px] text-[#6b5a43] leading-relaxed">
+                <p className="mt-3 p-3 rounded-lg bg-[#C9D1D9]/25 border border-[#C9D1D9]/60 text-[11px] text-[#C9D1D9] leading-relaxed">
                   The backend reports the runner as disabled, so starting a run is not available.
                   Planning and approval still work.
                 </p>
               )}
 
               {validation && (
-                <div className="mt-4 p-3.5 rounded-lg border border-[#E5E1D7] bg-[#FAF8F3] space-y-2">
+                <div className="mt-4 p-3.5 rounded-lg border border-[#30363D] bg-[#000000] space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold text-[#343832]">Validation</span>
+                    <span className="text-xs font-semibold text-[#F0F6FC]">Validation</span>
                     <Pill tone={validation.ok ? 'sage' : 'rose'}>
                       {validation.ok ? 'OK' : 'BLOCKING ISSUES'}
                     </Pill>
-                    <span className="text-[10px] text-[#777A72] font-mono">
+                    <span className="text-[10px] text-[#B1BAC4] font-mono">
                       revision {validation.revision} · {validation.ready_cases} ready ·{' '}
                       {validation.blocked_cases} blocked · {validation.total_cases} total
                     </span>
@@ -276,13 +276,13 @@ export const ReliabilityPlan: React.FC = () => {
                     </p>
                   )}
                   {validation.drift.map((entry, index) => (
-                    <div key={`drift-${index}`} className="text-[11px] text-[#6b5a43]">
+                    <div key={`drift-${index}`} className="text-[11px] text-[#C9D1D9]">
                       <span className="font-mono text-[10px]">{String(entry.kind ?? 'drift')}: </span>
                       {String(entry.message ?? entry.case_key ?? '')}
                     </div>
                   ))}
                   {validation.blocking_issues.map((entry, index) => (
-                    <div key={`blocked-${index}`} className="text-[11px] text-[#733e3f]">
+                    <div key={`blocked-${index}`} className="text-[11px] text-[#FF7B72]">
                       <span className="font-mono text-[10px]">
                         {String(entry.case_key ?? entry.code ?? 'blocked')}:{' '}
                       </span>
@@ -290,7 +290,7 @@ export const ReliabilityPlan: React.FC = () => {
                     </div>
                   ))}
                   {validation.warnings.map((entry, index) => (
-                    <div key={`warning-${index}`} className="text-[11px] text-[#6b5a43]">
+                    <div key={`warning-${index}`} className="text-[11px] text-[#C9D1D9]">
                       <span className="font-mono text-[10px]">
                         {String(entry.code ?? 'warning')}:{' '}
                       </span>
@@ -308,7 +308,7 @@ export const ReliabilityPlan: React.FC = () => {
                   ? `Revision ${plan.latest_revision.revision} · ${plan.latest_revision.status}`
                   : 'Generate a matrix to freeze task, scenario and trigger combinations'
               }
-              icon={<FlaskConical className="w-4 h-4 text-[#8297AC]" />}
+              icon={<FlaskConical className="w-4 h-4 text-[#C9D1D9]" />}
               bodyClassName="p-0"
             >
               {!plan?.latest_revision ? (
@@ -329,7 +329,7 @@ export const ReliabilityPlan: React.FC = () => {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                    <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                       <tr>
                         <th className="px-5 py-2.5 font-semibold">Case</th>
                         <th className="px-3 py-2.5 font-semibold">Task</th>
@@ -340,12 +340,12 @@ export const ReliabilityPlan: React.FC = () => {
                         <th className="px-3 py-2.5" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E5E1D7]">
+                    <tbody className="divide-y divide-[#30363D]">
                       {cases.map((testCase) => (
                         <tr
                           key={testCase.id}
-                          className={`hover:bg-[#FAF8F3] transition-colors ${
-                            selectedCaseId === testCase.id ? 'bg-[#879B83]/8' : ''
+                          className={`hover:bg-[#000000] transition-colors ${
+                            selectedCaseId === testCase.id ? 'bg-[#C9D1D9]/8' : ''
                           }`}
                         >
                           <td className="px-5 py-3">
@@ -355,29 +355,29 @@ export const ReliabilityPlan: React.FC = () => {
                                   selectedCaseId === testCase.id ? null : testCase.id,
                                 )
                               }
-                              className="font-mono text-[11px] text-[#343832] hover:text-[#5f745b] underline-offset-2 hover:underline"
+                              className="font-mono text-[11px] text-[#F0F6FC] hover:text-[#C9D1D9] underline-offset-2 hover:underline"
                             >
                               {testCase.case_key}
                             </button>
-                            <div className="text-[10px] text-[#777A72] font-mono">
+                            <div className="text-[10px] text-[#B1BAC4] font-mono">
                               {shortId(testCase.id, 8)}
                             </div>
                           </td>
                           <td className="px-3 py-3 max-w-[200px]">
-                            <span className="font-mono text-[11px] text-[#52564e] block truncate" title={testCase.task_name}>
+                            <span className="font-mono text-[11px] text-[#C9D1D9] block truncate" title={testCase.task_name}>
                               {testCase.task_name}
                             </span>
                           </td>
                           <td className="px-3 py-3">
                             <Pill tone="blue">{testCase.scenario_id}</Pill>
-                            <div className="text-[10px] text-[#777A72] font-mono mt-0.5">
+                            <div className="text-[10px] text-[#B1BAC4] font-mono mt-0.5">
                               v{testCase.scenario_version}
                             </div>
                           </td>
-                          <td className="px-3 py-3 text-[11px] text-[#52564e]">
+                          <td className="px-3 py-3 text-[11px] text-[#C9D1D9]">
                             {testCase.trigger_type}
                             {testCase.checkpoint_name && (
-                              <div className="text-[10px] text-[#777A72] font-mono">
+                              <div className="text-[10px] text-[#B1BAC4] font-mono">
                                 {testCase.checkpoint_name}
                               </div>
                             )}
@@ -392,12 +392,12 @@ export const ReliabilityPlan: React.FC = () => {
                             {approvedCurrent && runnerEnabled && testCase.status === 'READY' ? (
                               <button
                                 onClick={() => setStartCase(testCase)}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg"
                               >
                                 <Play className="w-3 h-3" /> Start
                               </button>
                             ) : (
-                              <span className="text-[10px] text-[#777A72]">
+                              <span className="text-[10px] text-[#B1BAC4]">
                                 {testCase.status !== 'READY'
                                   ? 'Blocked'
                                   : !runnerEnabled
@@ -418,11 +418,11 @@ export const ReliabilityPlan: React.FC = () => {
               <SectionCard
                 title={`Case ${selectedCase.case_key}`}
                 description="Frozen configuration and backend compatibility evidence"
-                icon={<SkipForward className="w-4 h-4 text-[#8297AC]" />}
+                icon={<SkipForward className="w-4 h-4 text-[#C9D1D9]" />}
                 actions={
                   <button
                     onClick={() => setSelectedCaseId(null)}
-                    className="text-[11px] text-[#777A72] hover:text-[#343832]"
+                    className="text-[11px] text-[#B1BAC4] hover:text-[#F0F6FC]"
                   >
                     Close
                   </button>
@@ -431,7 +431,7 @@ export const ReliabilityPlan: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Compatibility reasons
                       </span>
                       {selectedCase.compatibility.reasons.length === 0 ? (
@@ -444,7 +444,7 @@ export const ReliabilityPlan: React.FC = () => {
                             <li
                               key={`${reason.code}-${reason.message}`}
                               className={`text-[11px] leading-relaxed ${
-                                reason.severity === 'warning' ? 'text-[#6b5a43]' : 'text-[#733e3f]'
+                                reason.severity === 'warning' ? 'text-[#C9D1D9]' : 'text-[#FF7B72]'
                               }`}
                             >
                               <span className="font-mono text-[10px]">{reason.code}: </span>
@@ -455,28 +455,28 @@ export const ReliabilityPlan: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Recovery policy
                       </span>
-                      <pre className="mt-1 p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10.5px] font-mono overflow-x-auto">
+                      <pre className="mt-1 p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10.5px] font-mono overflow-x-auto">
                         {prettyJson(selectedCase.recovery_policy ?? {}) || '—'}
                       </pre>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Adapters
                       </span>
-                      <pre className="mt-1 p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10.5px] font-mono overflow-x-auto">
+                      <pre className="mt-1 p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10.5px] font-mono overflow-x-auto">
                         {prettyJson(selectedCase.adapter_refs) || '—'}
                       </pre>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Test input / fixture
                       </span>
-                      <pre className="mt-1 p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10.5px] font-mono overflow-x-auto">
+                      <pre className="mt-1 p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10.5px] font-mono overflow-x-auto">
                         {prettyJson(selectedCase.test_input ?? {}) || '—'}
                         {selectedCase.input_fixture_ref
                           ? `\nfixture: ${selectedCase.input_fixture_ref}`
@@ -484,22 +484,22 @@ export const ReliabilityPlan: React.FC = () => {
                       </pre>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Scenario configuration
                       </span>
-                      <pre className="mt-1 p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10.5px] font-mono overflow-x-auto">
+                      <pre className="mt-1 p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10.5px] font-mono overflow-x-auto">
                         {prettyJson(selectedCase.scenario_config ?? {}) || '{}'}
                       </pre>
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Assertions
                       </span>
-                      <pre className="mt-1 p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10.5px] font-mono overflow-x-auto max-h-40">
+                      <pre className="mt-1 p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10.5px] font-mono overflow-x-auto max-h-40">
                         {prettyJson(selectedCase.assertions) || '[]'}
                       </pre>
                     </div>
-                    <div className="text-[10px] text-[#777A72] font-mono break-all">
+                    <div className="text-[10px] text-[#B1BAC4] font-mono break-all">
                       fingerprint: {selectedCase.configuration_fingerprint}
                       <br />
                       contract: {selectedCase.contract_version ? `v${selectedCase.contract_version}` : 'none'}
@@ -514,11 +514,11 @@ export const ReliabilityPlan: React.FC = () => {
             <SectionCard
               title="Runs for this plan"
               description="Every run started from an approved revision"
-              icon={<Play className="w-4 h-4 text-[#8297AC]" />}
+              icon={<Play className="w-4 h-4 text-[#C9D1D9]" />}
               actions={
                 <Link
                   to={`/applications/${appId}/reliability/runs`}
-                  className="text-[11px] font-medium text-[#5f745b] hover:text-[#343832]"
+                  className="text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
                 >
                   All test runs
                 </Link>
@@ -538,16 +538,16 @@ export const ReliabilityPlan: React.FC = () => {
                   />
                 </div>
               ) : (
-                <div className="divide-y divide-[#E5E1D7]">
+                <div className="divide-y divide-[#30363D]">
                   {data?.runs.map((run) => (
                     <Link
                       key={run.id}
                       to={`/applications/${appId}/reliability/runs/${run.id}`}
-                      className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-[#FAF8F3]"
+                      className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-[#000000]"
                     >
                       <div className="min-w-0">
-                        <div className="text-xs font-mono text-[#343832] truncate">{run.case_key}</div>
-                        <div className="text-[10px] text-[#777A72]">
+                        <div className="text-xs font-mono text-[#F0F6FC] truncate">{run.case_key}</div>
+                        <div className="text-[10px] text-[#B1BAC4]">
                           {shortId(run.id, 10)} · {run.scenario_id} · {formatDateTime(run.created_at)}
                         </div>
                       </div>
@@ -562,7 +562,7 @@ export const ReliabilityPlan: React.FC = () => {
             </SectionCard>
 
             {plan?.latest_revision && (
-              <div className="text-[11px] text-[#777A72] flex flex-wrap items-center justify-between gap-2">
+              <div className="text-[11px] text-[#B1BAC4] flex flex-wrap items-center justify-between gap-2">
                 <span>
                   Matrix summary: {prettyJson(plan.latest_revision.summary ?? {}) || '—'}
                 </span>

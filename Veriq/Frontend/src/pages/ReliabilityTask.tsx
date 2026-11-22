@@ -53,7 +53,7 @@ const ReasonList: React.FC<{ reasons: CompatibilityReason[] }> = ({ reasons }) =
         <li
           key={`${reason.code}-${reason.message}`}
           className={`flex items-start gap-1.5 text-[11px] leading-relaxed ${
-            reason.severity === 'warning' ? 'text-[#6b5a43]' : 'text-[#733e3f]'
+            reason.severity === 'warning' ? 'text-[#C9D1D9]' : 'text-[#FF7B72]'
           }`}
         >
           <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
@@ -287,7 +287,7 @@ export const ReliabilityTask: React.FC = () => {
           eyebrow={
             <Link
               to={`/applications/${appId}/reliability`}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#5f745b] hover:text-[#343832]"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to reliability planning
             </Link>
@@ -301,36 +301,36 @@ export const ReliabilityTask: React.FC = () => {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7]">
-                <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
+                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                   Registered task
                 </span>
-                <div className="mt-1 text-xs font-mono text-[#343832] break-all">
+                <div className="mt-1 text-xs font-mono text-[#F0F6FC] break-all">
                   {task?.task_name ?? '—'}
                 </div>
                 <div className="mt-1.5 flex items-center gap-1.5">
                   <StatusBadge status={task?.status ?? 'UNKNOWN'} />
-                  <span className="text-[10px] text-[#777A72]">
+                  <span className="text-[10px] text-[#B1BAC4]">
                     last seen {formatRelative(task?.last_seen_at)}
                   </span>
                 </div>
               </div>
-              <div className="p-4 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7]">
-                <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
+                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                   Contract version
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#343832]">
+                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">
                   {contract ? `v${contract.version}` : 'None'}
                 </div>
-                <div className="text-[10px] text-[#777A72] mt-0.5">
+                <div className="text-[10px] text-[#B1BAC4] mt-0.5">
                   {contract ? `updated ${formatRelative(contract.updated_at)}` : 'Create one to enable assertions'}
                 </div>
               </div>
-              <div className="p-4 bg-[#FDFCFA] rounded-xl border border-[#E5E1D7]">
-                <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+              <div className="p-4 bg-[#000000] rounded-xl border border-[#30363D]">
+                <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                   Enabled scenarios
                 </span>
-                <div className="mt-1 font-serif font-bold text-xl text-[#343832]">
+                <div className="mt-1 font-serif font-bold text-xl text-[#F0F6FC]">
                   {overview
                     ? overview.automatic_scenarios.filter((scenario) => scenario.enabled).length +
                       overview.checkpoints.reduce(
@@ -340,7 +340,7 @@ export const ReliabilityTask: React.FC = () => {
                       )
                     : 0}
                 </div>
-                <div className="text-[10px] text-[#777A72] mt-0.5">
+                <div className="text-[10px] text-[#B1BAC4] mt-0.5">
                   {overview?.checkpoints.length ?? 0} checkpoint
                   {(overview?.checkpoints.length ?? 0) === 1 ? '' : 's'} discovered
                 </div>
@@ -348,11 +348,11 @@ export const ReliabilityTask: React.FC = () => {
             </div>
 
             {task?.task_metadata && (
-              <details className="rounded-xl border border-[#E5E1D7] bg-[#FDFCFA] px-4 py-3">
-                <summary className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold cursor-pointer">
+              <details className="rounded-xl border border-[#30363D] bg-[#000000] px-4 py-3">
+                <summary className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold cursor-pointer">
                   Registered task metadata
                 </summary>
-                <pre className="mt-2 p-2.5 rounded-lg bg-[#FAF8F3] border border-[#E5E1D7] text-[10px] font-mono overflow-x-auto">
+                <pre className="mt-2 p-2.5 rounded-lg bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto">
                   {prettyJson(task.task_metadata)}
                 </pre>
               </details>
@@ -361,12 +361,12 @@ export const ReliabilityTask: React.FC = () => {
             <SectionCard
               title="Task test contract"
               description="Safe inputs and the recovery policy the runner will check"
-              icon={<FileJson className="w-4 h-4 text-[#8297AC]" />}
+              icon={<FileJson className="w-4 h-4 text-[#C9D1D9]" />}
               actions={
                 contract ? (
                   <button
                     onClick={validateContract}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7]"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22]"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" /> Validate
                   </button>
@@ -374,9 +374,9 @@ export const ReliabilityTask: React.FC = () => {
               }
             >
               {overview?.contract_issues && overview.contract_issues.length > 0 && (
-                <div className="mb-4 p-3 rounded-lg bg-[#A46F70]/10 border border-[#A46F70]/30 space-y-1">
+                <div className="mb-4 p-3 rounded-lg bg-[#F85149]/10 border border-[#F85149]/30 space-y-1">
                   {overview.contract_issues.map((issue) => (
-                    <div key={`${issue.code}-${issue.message}`} className="text-[11px] text-[#733e3f]">
+                    <div key={`${issue.code}-${issue.message}`} className="text-[11px] text-[#FF7B72]">
                       <span className="font-mono text-[10px]">{issue.code}: </span>
                       {issue.message}
                     </div>
@@ -387,72 +387,72 @@ export const ReliabilityTask: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Safe test input (JSON, never credentials)
                     </span>
                     <textarea
                       value={safeInput}
                       onChange={(event) => setSafeInput(event.target.value)}
                       rows={5}
-                      className="mt-1 w-full px-3 py-2 text-[11px] bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                      className="mt-1 w-full px-3 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       placeholder='{"order_id": "test-order-1"}'
                     />
                   </label>
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Assertions (JSON array, required by most scenarios)
                     </span>
                     <textarea
                       value={assertionsText}
                       onChange={(event) => setAssertionsText(event.target.value)}
                       rows={4}
-                      className="mt-1 w-full px-3 py-2 text-[11px] bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                      className="mt-1 w-full px-3 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       placeholder='[{"id":"task_succeeds","description":"Task succeeds","type":"execution_status","expected":"SUCCEEDED"}]'
                     />
                   </label>
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Input fixture reference (optional)
                     </span>
                     <input
                       value={fixtureRef}
                       onChange={(event) => setFixtureRef(event.target.value)}
-                      className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                      className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       placeholder="fixture://checkout/order"
                     />
                   </label>
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Notes
                     </span>
                     <textarea
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
                       rows={2}
-                      className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg"
+                      className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg"
                     />
                   </label>
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Effect measurements (JSON array, optional)
                     </span>
                     <textarea
                       value={measurementsText}
                       onChange={(event) => setMeasurementsText(event.target.value)}
                       rows={3}
-                      className="mt-1 w-full px-3 py-2 text-[11px] bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                      className="mt-1 w-full px-3 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       placeholder="[]"
                     />
                   </label>
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Cleanup (JSON object)
                     </span>
                     <textarea
                       value={cleanupText}
                       onChange={(event) => setCleanupText(event.target.value)}
                       rows={2}
-                      className="mt-1 w-full px-3 py-2 text-[11px] bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                      className="mt-1 w-full px-3 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       placeholder='{"mode":"none"}'
                     />
                   </label>
@@ -461,52 +461,52 @@ export const ReliabilityTask: React.FC = () => {
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="block">
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Max attempts
                       </span>
                       <input
                         value={maxAttempts}
                         onChange={(event) => setMaxAttempts(event.target.value)}
                         inputMode="numeric"
-                        className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                        className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Attempt timeout (s)
                       </span>
                       <input
                         value={attemptTimeout}
                         onChange={(event) => setAttemptTimeout(event.target.value)}
                         inputMode="numeric"
-                        className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                        className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Recovery deadline (s)
                       </span>
                       <input
                         value={recoveryDeadline}
                         onChange={(event) => setRecoveryDeadline(event.target.value)}
                         inputMode="numeric"
-                        className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                        className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                         Settle (s)
                       </span>
                       <input
                         value={settleSeconds}
                         onChange={(event) => setSettleSeconds(event.target.value)}
                         inputMode="numeric"
-                        className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg font-mono"
+                        className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg font-mono"
                       />
                     </label>
                   </div>
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Expected terminal state
                     </span>
                     <select
@@ -514,7 +514,7 @@ export const ReliabilityTask: React.FC = () => {
                       onChange={(event) =>
                         setTerminalState(event.target.value as 'SUCCEEDED' | 'FAILED' | 'ANY')
                       }
-                      className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg"
+                      className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg"
                     >
                       <option value="SUCCEEDED">SUCCEEDED</option>
                       <option value="FAILED">FAILED</option>
@@ -522,7 +522,7 @@ export const ReliabilityTask: React.FC = () => {
                     </select>
                   </label>
                   <label className="block">
-                    <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                       Retry expectation
                     </span>
                     <select
@@ -530,14 +530,14 @@ export const ReliabilityTask: React.FC = () => {
                       onChange={(event) =>
                         setExpectRetry(event.target.value as 'inherit' | 'true' | 'false')
                       }
-                      className="mt-1 w-full px-3 py-2 text-xs bg-white border border-[#E5E1D7] rounded-lg"
+                      className="mt-1 w-full px-3 py-2 text-xs bg-[#000000] border border-[#30363D] rounded-lg"
                     >
                       <option value="inherit">Inherit scenario default</option>
                       <option value="true">A retry must be requested</option>
                       <option value="false">No retry expected</option>
                     </select>
                   </label>
-                  <p className="text-[10px] text-[#777A72] leading-relaxed">
+                  <p className="text-[10px] text-[#B1BAC4] leading-relaxed">
                     These values are stored in the contract payload. The runner evaluates them
                     against execution evidence only — no business-effect verification is performed.
                   </p>
@@ -545,7 +545,7 @@ export const ReliabilityTask: React.FC = () => {
               </div>
 
               <div className="mt-4 flex items-center justify-between gap-2">
-                <span className="text-[10px] text-[#777A72]">
+                <span className="text-[10px] text-[#B1BAC4]">
                   {contract
                     ? `Saving creates contract version v${contract.version + 1}`
                     : 'No contract exists for this task yet'}
@@ -553,7 +553,7 @@ export const ReliabilityTask: React.FC = () => {
                 <button
                   onClick={saveContract}
                   disabled={savingContract}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg disabled:opacity-60"
                 >
                   <Save className="w-3.5 h-3.5" />
                   {savingContract ? 'Saving…' : contract ? 'Save new version' : 'Create contract'}
@@ -564,12 +564,12 @@ export const ReliabilityTask: React.FC = () => {
             <SectionCard
               title="Automatic scenarios"
               description="Compatibility is decided by the backend from contracts and configured adapters"
-              icon={<ListChecks className="w-4 h-4 text-[#8297AC]" />}
+              icon={<ListChecks className="w-4 h-4 text-[#C9D1D9]" />}
               actions={
                 <button
                   onClick={evaluateSelections}
                   disabled={evaluating}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] disabled:opacity-50"
                   title="Ask the backend to re-evaluate the enabled automatic selections"
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -578,21 +578,21 @@ export const ReliabilityTask: React.FC = () => {
               }
             >
               {evaluation && (
-                <div className="mb-3 p-3 rounded-lg border border-[#E5E1D7] bg-white space-y-2">
-                  <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+                <div className="mb-3 p-3 rounded-lg border border-[#30363D] bg-[#000000] space-y-2">
+                  <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
                     Backend compatibility evaluation
                   </span>
                   {evaluation.map((result) => (
                     <div key={`${result.task_id}-${result.scenario_id}`} className="text-[11px] space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-[#343832]">{result.scenario_id}</span>
+                        <span className="font-mono text-[#F0F6FC]">{result.scenario_id}</span>
                         <CompatibilityBadge status={result.status} />
-                        <span className="text-[10px] text-[#777A72]">
+                        <span className="text-[10px] text-[#B1BAC4]">
                           execution available: {result.execution_available ? 'yes' : 'no'}
                         </span>
                       </div>
                       <ReasonList reasons={result.reasons} />
-                      <p className="text-[10px] text-[#777A72]">{result.execution_note}</p>
+                      <p className="text-[10px] text-[#B1BAC4]">{result.execution_note}</p>
                     </div>
                   ))}
                 </div>
@@ -620,7 +620,7 @@ export const ReliabilityTask: React.FC = () => {
             <SectionCard
               title="Checkpoint scenarios"
               description="Checkpoints reported by the running task; each must be enabled for reliability testing"
-              icon={<Flag className="w-4 h-4 text-[#8297AC]" />}
+              icon={<Flag className="w-4 h-4 text-[#C9D1D9]" />}
             >
               {(overview?.checkpoints.length ?? 0) === 0 ? (
                 <EmptyState
@@ -633,50 +633,50 @@ export const ReliabilityTask: React.FC = () => {
                   {overview?.checkpoints.map((checkpoint) => (
                     <div
                       key={checkpoint.id}
-                      className="rounded-lg border border-[#E5E1D7] bg-[#FAF8F3] overflow-hidden"
+                      className="rounded-lg border border-[#30363D] bg-[#000000] overflow-hidden"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 border-b border-[#E5E1D7]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 border-b border-[#30363D]">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs font-semibold text-[#343832] font-mono truncate">
+                          <span className="text-xs font-semibold text-[#F0F6FC] font-mono truncate">
                             {checkpoint.name}
                           </span>
                           <Pill tone="muted">{checkpoint.report_count} reports</Pill>
-                          <span className="text-[10px] text-[#777A72]">
+                          <span className="text-[10px] text-[#B1BAC4]">
                             last seen {formatRelative(checkpoint.last_seen_at)}
                           </span>
                         </div>
-                        <label className="inline-flex items-center gap-1.5 text-[11px] text-[#52564e]">
+                        <label className="inline-flex items-center gap-1.5 text-[11px] text-[#C9D1D9]">
                           <input
                             type="checkbox"
                             checked={checkpoint.reliability_enabled}
                             onChange={(event) =>
                               toggleCheckpoint(checkpoint.id, event.target.checked)
                             }
-                            className="accent-[#879B83]"
+                            className="accent-[#C9D1D9]"
                           />
                           Reliability enabled
                         </label>
                       </div>
                       <div className="p-3 space-y-2">
                         {checkpoint.scenarios.length === 0 ? (
-                          <p className="text-[11px] text-[#777A72]">
+                          <p className="text-[11px] text-[#B1BAC4]">
                             No scenario in the catalogue supports checkpoint triggers.
                           </p>
                         ) : (
                           checkpoint.scenarios.map((scenario) => (
                             <div
                               key={scenario.scenario_id}
-                              className="rounded border border-[#E5E1D7] bg-white p-3 space-y-1.5"
+                              className="rounded border border-[#30363D] bg-[#000000] p-3 space-y-1.5"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="text-[11px] font-semibold text-[#343832]">
+                                  <span className="text-[11px] font-semibold text-[#F0F6FC]">
                                     {scenario.name}
                                   </span>
                                   <CompatibilityBadge status={scenario.compatibility.status} />
                                   <Pill tone="muted">{scenario.scenario_id}</Pill>
                                 </div>
-                                <label className="inline-flex items-center gap-1.5 text-[11px] text-[#52564e]">
+                                <label className="inline-flex items-center gap-1.5 text-[11px] text-[#C9D1D9]">
                                   <input
                                     type="checkbox"
                                     checked={scenario.enabled}
@@ -693,7 +693,7 @@ export const ReliabilityTask: React.FC = () => {
                                         ),
                                       )
                                     }
-                                    className="accent-[#879B83]"
+                                    className="accent-[#C9D1D9]"
                                   />
                                   Enabled
                                 </label>
@@ -751,11 +751,11 @@ const ScenarioRowWithSave: React.FC<{
   };
 
   return (
-    <div className="p-3.5 rounded-lg border border-[#E5E1D7] bg-[#FAF8F3] space-y-2.5">
+    <div className="p-3.5 rounded-lg border border-[#30363D] bg-[#000000] space-y-2.5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-[#343832]" title={item.description}>
+            <span className="text-xs font-semibold text-[#F0F6FC]" title={item.description}>
               {item.name}
             </span>
             <CompatibilityBadge status={item.compatibility.status} />
@@ -763,10 +763,10 @@ const ScenarioRowWithSave: React.FC<{
             <Pill tone="muted">v{item.scenario_version}</Pill>
             {item.category && <Pill tone="blue">{item.category}</Pill>}
           </div>
-          <p className="text-[11px] text-[#777A72] mt-1 leading-relaxed">{item.description}</p>
+          <p className="text-[11px] text-[#B1BAC4] mt-1 leading-relaxed">{item.description}</p>
         </div>
         <label
-          className="inline-flex items-center gap-1.5 text-[11px] text-[#52564e] shrink-0"
+          className="inline-flex items-center gap-1.5 text-[11px] text-[#C9D1D9] shrink-0"
           title={blocked ? 'The backend reports this scenario as unsupported for the task' : undefined}
         >
           <input
@@ -774,13 +774,13 @@ const ScenarioRowWithSave: React.FC<{
             checked={enabled}
             disabled={blocked}
             onChange={(event) => setEnabled(event.target.checked)}
-            className="accent-[#879B83]"
+            className="accent-[#C9D1D9]"
           />
           Enabled
         </label>
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#777A72] font-mono">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#B1BAC4] font-mono">
         <span>trigger: {item.default_trigger_type}</span>
         <span>supported: {item.supported_status}</span>
         <span>implementation: {item.implementation_status}</span>
@@ -788,14 +788,14 @@ const ScenarioRowWithSave: React.FC<{
 
       <ReasonList reasons={item.compatibility.reasons} />
       {item.compatibility.warnings.map((warning) => (
-        <p key={warning.code} className="text-[11px] text-[#6b5a43] leading-relaxed">
+        <p key={warning.code} className="text-[11px] text-[#C9D1D9] leading-relaxed">
           <span className="font-mono text-[10px]">{warning.code}: </span>
           {warning.message}
         </p>
       ))}
 
       {item.compatibility.selected_adapters.length > 0 && (
-        <div className="text-[10px] text-[#777A72]">
+        <div className="text-[10px] text-[#B1BAC4]">
           Adapters:{' '}
           {item.compatibility.selected_adapters
             .map((adapter) =>
@@ -806,7 +806,7 @@ const ScenarioRowWithSave: React.FC<{
       )}
 
       {definition && (
-        <div className="text-[10px] text-[#777A72]">
+        <div className="text-[10px] text-[#B1BAC4]">
           Requires:{' '}
           {Object.entries(definition.requires)
             .filter(([, required]) => required)
@@ -830,16 +830,16 @@ const ScenarioRowWithSave: React.FC<{
 
       {definition && (
         <details>
-          <summary className="text-[10px] text-[#777A72] cursor-pointer">
+          <summary className="text-[10px] text-[#B1BAC4] cursor-pointer">
             Configuration schema
           </summary>
-          <pre className="mt-1 p-2 rounded bg-white border border-[#E5E1D7] text-[10px] font-mono overflow-x-auto">
+          <pre className="mt-1 p-2 rounded bg-[#000000] border border-[#30363D] text-[10px] font-mono overflow-x-auto">
             {prettyJson(definition.configuration_schema)}
           </pre>
         </details>
       )}
 
-      <div className="text-[10px] text-[#777A72]">
+      <div className="text-[10px] text-[#B1BAC4]">
         Expected recovery:{' '}
         {definition?.expected_recovery.length
           ? definition.expected_recovery.join(' ')
@@ -847,26 +847,26 @@ const ScenarioRowWithSave: React.FC<{
       </div>
 
       <label className="block">
-        <span className="text-[10px] uppercase tracking-wider text-[#777A72] font-semibold">
+        <span className="text-[10px] uppercase tracking-wider text-[#B1BAC4] font-semibold">
           Scenario configuration (JSON)
         </span>
         <textarea
           value={config}
           onChange={(event) => setConfig(event.target.value)}
           rows={2}
-          className="mt-1 w-full px-2.5 py-2 text-[11px] bg-white border border-[#E5E1D7] rounded-lg font-mono"
+          className="mt-1 w-full px-2.5 py-2 text-[11px] bg-[#000000] border border-[#30363D] rounded-lg font-mono"
         />
       </label>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] text-[#777A72]">
+        <span className="text-[10px] text-[#B1BAC4]">
           {dirty ? 'Unsaved changes' : 'Matches the backend selection'}
         </span>
         <button
           type="button"
           onClick={save}
           disabled={busy || !dirty}
-          className="px-2.5 py-1.5 text-[11px] font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg disabled:opacity-40"
+          className="px-2.5 py-1.5 text-[11px] font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg disabled:opacity-40"
         >
           {busy ? 'Saving…' : 'Save scenario'}
         </button>

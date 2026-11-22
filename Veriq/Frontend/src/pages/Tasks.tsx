@@ -52,20 +52,20 @@ const TaskDetailModal: React.FC<{ taskId: string; appId: string; onClose: () => 
   const { data, loading, error, reload } = useApiResource(loadTask);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#343832]/40 backdrop-blur-xs">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-xl overflow-hidden flex flex-col">
-        <div className="px-5 py-3.5 border-b border-[#E5E1D7] bg-[#FAF8F3] flex items-start justify-between gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F0F6FC]/40 backdrop-blur-xs">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-[#000000] rounded-xl border border-[#30363D] shadow-xl overflow-hidden flex flex-col">
+        <div className="px-5 py-3.5 border-b border-[#30363D] bg-[#000000] flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="font-serif font-bold text-base text-[#343832] truncate">
+            <h2 className="font-serif font-bold text-base text-[#F0F6FC] truncate">
               {data?.task.task_name ?? 'Task'}
             </h2>
-            <p className="text-[11px] text-[#777A72]">
+            <p className="text-[11px] text-[#B1BAC4]">
               Discovered task metadata and recent execution attempts
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-[#777A72] hover:text-[#343832] rounded-md hover:bg-[#EFEEE7]"
+            className="p-1.5 text-[#B1BAC4] hover:text-[#F0F6FC] rounded-md hover:bg-[#161B22]"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -88,19 +88,19 @@ const TaskDetailModal: React.FC<{ taskId: string; appId: string; onClose: () => 
                   ['Discovered at', formatDateTime(data.task.discovered_at)],
                   ['Executions', String(data.task.execution_count)],
                 ].map(([label, value], index) => (
-                  <div key={index} className="p-2.5 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg">
-                    <span className="text-[10px] text-[#777A72] block">{label}</span>
-                    <span className="text-[11.5px] text-[#343832] mt-0.5 block break-words">{value}</span>
+                  <div key={index} className="p-2.5 bg-[#000000] border border-[#30363D] rounded-lg">
+                    <span className="text-[10px] text-[#B1BAC4] block">{label}</span>
+                    <span className="text-[11.5px] text-[#F0F6FC] mt-0.5 block break-words">{value}</span>
                   </div>
                 ))}
               </div>
 
               <div>
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#B1BAC4] mb-1.5">
                   Queues observed for this task
                 </h3>
                 {data.task.queue_names.length === 0 ? (
-                  <p className="text-xs text-[#777A72]">No queue names have been observed yet.</p>
+                  <p className="text-xs text-[#B1BAC4]">No queue names have been observed yet.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {data.task.queue_names.map((queue) => (
@@ -114,10 +114,10 @@ const TaskDetailModal: React.FC<{ taskId: string; appId: string; onClose: () => 
 
               {data.task.task_metadata && Object.keys(data.task.task_metadata).length > 0 && (
                 <div>
-                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#B1BAC4] mb-1.5">
                     Stored task metadata
                   </h3>
-                  <pre className="p-3 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg text-[11px] font-mono overflow-x-auto">
+                  <pre className="p-3 bg-[#000000] border border-[#30363D] rounded-lg text-[11px] font-mono overflow-x-auto">
                     {JSON.stringify(data.task.task_metadata, null, 2)}
                   </pre>
                 </div>
@@ -125,33 +125,33 @@ const TaskDetailModal: React.FC<{ taskId: string; appId: string; onClose: () => 
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#777A72]">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#B1BAC4]">
                     Recent executions for this task
                   </h3>
                   <Link
                     to={`/applications/${appId}/executions?task=${encodeURIComponent(data.task.task_name)}`}
-                    className="text-[11px] font-medium text-[#5f745b] hover:text-[#343832]"
+                    className="text-[11px] font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
                   >
                     View all
                   </Link>
                 </div>
                 {data.executions.items.length === 0 ? (
-                  <p className="text-xs text-[#777A72] p-3 border border-dashed border-[#E5E1D7] rounded-lg">
+                  <p className="text-xs text-[#B1BAC4] p-3 border border-dashed border-[#30363D] rounded-lg">
                     No executions recorded for this task yet.
                   </p>
                 ) : (
-                  <div className="divide-y divide-[#E5E1D7] border border-[#E5E1D7] rounded-lg overflow-hidden">
+                  <div className="divide-y divide-[#30363D] border border-[#30363D] rounded-lg overflow-hidden">
                     {data.executions.items.map((execution) => (
                       <Link
                         key={execution.id}
                         to={`/applications/${appId}/executions/${execution.id}`}
-                        className="flex items-center justify-between gap-2 px-3 py-2.5 bg-white hover:bg-[#FAF8F3]"
+                        className="flex items-center justify-between gap-2 px-3 py-2.5 bg-[#000000] hover:bg-[#000000]"
                       >
                         <div className="min-w-0">
-                          <div className="text-[11px] text-[#343832]">
+                          <div className="text-[11px] text-[#F0F6FC]">
                             {formatDateTime(execution.started_at)}
                           </div>
-                          <div className="text-[10px] text-[#777A72] font-mono truncate">
+                          <div className="text-[10px] text-[#B1BAC4] font-mono truncate">
                             {execution.worker_hostname || 'unknown worker'} · {shortId(execution.execution_id)}
                           </div>
                         </div>
@@ -222,19 +222,19 @@ export const Tasks: React.FC = () => {
           title="Task Catalog"
           description={`Celery tasks discovered in ${application?.name ?? 'this application'}. Discovery is independent of execution telemetry.`}
           eyebrow={
-            <span className="text-[11px] text-[#777A72] font-mono">GET /api/v1/registered-tasks</span>
+            <span className="text-[11px] text-[#B1BAC4] font-mono">GET /api/v1/registered-tasks</span>
           }
           actions={
             <>
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
               <Link
                 to="/integration"
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg transition-all"
               >
                 <Terminal className="w-3.5 h-3.5" /> Integration guide
               </Link>
@@ -242,13 +242,13 @@ export const Tasks: React.FC = () => {
           }
         />
 
-        <details className="bg-[#8297AC]/8 border border-[#8297AC]/25 rounded-xl">
-          <summary className="px-4 py-3 cursor-pointer text-xs font-medium text-[#3b5168] flex items-center gap-2">
+        <details className="bg-[#C9D1D9]/8 border border-[#C9D1D9]/25 rounded-xl">
+          <summary className="px-4 py-3 cursor-pointer text-xs font-medium text-[#C9D1D9] flex items-center gap-2">
             <Info className="w-3.5 h-3.5" />
             How does task discovery work?
           </summary>
           <div className="px-4 pb-4 space-y-3">
-            <p className="text-xs text-[#52564e] leading-relaxed">
+            <p className="text-xs text-[#C9D1D9] leading-relaxed">
               The SDK reports the names in <span className="font-mono">celery_app.tasks</span> when the
               integration starts. Starting an instrumented Celery application or worker is enough to
               refresh discovery; no dashboard action is required.
@@ -261,7 +261,7 @@ from veriq.celery import integrate
 veriq = VeriQ(api_url="http://localhost:8000", api_key="vq_...")
 integrate(celery_app, veriq)  # reports task discovery on startup`}
             />
-            <p className="text-[11px] text-[#777A72]">
+            <p className="text-[11px] text-[#B1BAC4]">
               Observation status only controls whether ordinary execution telemetry is stored. Tasks
               remain discovered even when observation is disabled.
             </p>
@@ -273,10 +273,10 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
         <SectionCard
           title="Discovered tasks"
           description={data ? `${data.total} task${data.total === 1 ? '' : 's'} in this application` : 'Loading…'}
-          icon={<ListChecks className="w-4 h-4 text-[#8297AC]" />}
+          icon={<ListChecks className="w-4 h-4 text-[#C9D1D9]" />}
           actions={
             <div className="flex items-center gap-2">
-              <label htmlFor="task-status-filter" className="text-[11px] text-[#777A72]">
+              <label htmlFor="task-status-filter" className="text-[11px] text-[#B1BAC4]">
                 Observation
               </label>
               <select
@@ -286,7 +286,7 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
                   setStatusFilter(event.target.value as 'ALL' | TaskObservationStatus);
                   setSkip(0);
                 }}
-                className="px-2.5 py-1.5 text-xs bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+                className="px-2.5 py-1.5 text-xs bg-[#000000] border border-[#30363D] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9D1D9]"
               >
                 <option value="ALL">All statuses</option>
                 <option value="DISCOVERED">Discovered</option>
@@ -308,7 +308,7 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
                 action={
                   <Link
                     to="/integration"
-                    className="text-xs font-medium text-[#5f745b] hover:text-[#343832]"
+                    className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
                   >
                     Read the integration guide
                   </Link>
@@ -319,7 +319,7 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                  <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                     <tr>
                       <th className="px-5 py-2.5 font-semibold">Task name</th>
                       <th className="px-3 py-2.5 font-semibold">Observation</th>
@@ -330,18 +330,18 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
                       <th className="px-3 py-2.5" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E5E1D7]">
+                  <tbody className="divide-y divide-[#30363D]">
                     {data.items.map((task) => (
                       <tr
                         key={task.id}
                         onClick={() => setOpenTaskId(task.id)}
-                        className="hover:bg-[#FAF8F3] cursor-pointer transition-colors"
+                        className="hover:bg-[#000000] cursor-pointer transition-colors"
                       >
                         <td className="px-5 py-3 max-w-[320px]">
-                          <div className="font-mono text-[11.5px] text-[#343832] truncate" title={task.task_name}>
+                          <div className="font-mono text-[11.5px] text-[#F0F6FC] truncate" title={task.task_name}>
                             {task.task_name}
                           </div>
-                          <div className="text-[10px] text-[#777A72] mt-0.5">
+                          <div className="text-[10px] text-[#B1BAC4] mt-0.5">
                             Source: {task.discovery_source} · {shortId(task.id)}
                           </div>
                         </td>
@@ -352,7 +352,7 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
                             onChange={(event) =>
                               void changeObservation(task, event.target.value as TaskObservationStatus)
                             }
-                            className="px-2 py-1 text-[11px] bg-white border border-[#E5E1D7] rounded-md focus:outline-none focus:ring-1 focus:ring-[#879B83] disabled:opacity-50"
+                            className="px-2 py-1 text-[11px] bg-[#000000] border border-[#30363D] rounded-md focus:outline-none focus:ring-1 focus:ring-[#C9D1D9] disabled:opacity-50"
                             title="Change whether ordinary execution telemetry is stored"
                           >
                             <option value="DISCOVERED">Discovered</option>
@@ -361,12 +361,12 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
                           </select>
                         </td>
                         <td className="px-3 py-3">
-                          <span className="font-mono text-[#343832]">{task.execution_count}</span>
+                          <span className="font-mono text-[#F0F6FC]">{task.execution_count}</span>
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap">
                           {task.last_execution_at ? (
                             <>
-                              <div className="text-[11px] text-[#343832]">
+                              <div className="text-[11px] text-[#F0F6FC]">
                                 {formatRelative(task.last_execution_at)}
                               </div>
                               <div className="mt-0.5">
@@ -374,12 +374,12 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
                               </div>
                             </>
                           ) : (
-                            <span className="text-[#777A72]">—</span>
+                            <span className="text-[#B1BAC4]">—</span>
                           )}
                         </td>
                         <td className="px-3 py-3">
                           {task.queue_names.length === 0 ? (
-                            <span className="text-[#777A72]">—</span>
+                            <span className="text-[#B1BAC4]">—</span>
                           ) : (
                             <div className="flex flex-wrap gap-1 max-w-[180px]">
                               {task.queue_names.slice(0, 3).map((queue) => (
@@ -390,11 +390,11 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
                             </div>
                           )}
                         </td>
-                        <td className="px-3 py-3 text-[11px] text-[#777A72] whitespace-nowrap">
+                        <td className="px-3 py-3 text-[11px] text-[#B1BAC4] whitespace-nowrap">
                           {formatRelative(task.last_seen_at)}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <ChevronRight className="w-4 h-4 text-[#777A72] inline" />
+                          <ChevronRight className="w-4 h-4 text-[#B1BAC4] inline" />
                         </td>
                       </tr>
                     ))}
@@ -413,8 +413,8 @@ integrate(celery_app, veriq)  # reports task discovery on startup`}
           )}
         </SectionCard>
 
-        <div className="p-4 bg-[#FAF8F3] border border-[#E5E1D7] rounded-xl flex items-start gap-2.5 text-xs text-[#777A72]">
-          <Activity className="w-3.5 h-3.5 mt-0.5 text-[#8297AC] shrink-0" />
+        <div className="p-4 bg-[#000000] border border-[#30363D] rounded-xl flex items-start gap-2.5 text-xs text-[#B1BAC4]">
+          <Activity className="w-3.5 h-3.5 mt-0.5 text-[#C9D1D9] shrink-0" />
           <p className="leading-relaxed">
             Execution counts and last outcomes are catalog aggregates computed by the backend. Open a
             task for its recent attempts, or use the Executions page for application-wide history.

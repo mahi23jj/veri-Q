@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from urllib.parse import urlsplit
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable
@@ -26,6 +27,7 @@ from app.models.runtime import (
 )
 from app.services import runtime_service
 from app.runtime import checkpoint_coordination
+from app.runtime.addressing import LOOPBACK_HOSTS, runner_submit_host
 from app.runtime.contracts import (
     EnvironmentPlan,
     ProvisionResult,
@@ -62,6 +64,70 @@ class RunCancelled(Exception):
 
 class RunTimedOut(Exception):
     """The overall run deadline expired."""
+
+
+def _backend_submission_broker_url(
+    provisioned: ProvisionResult,
+    *,
+    runtime_type: str,
+) -> str:
+    """Return the broker address reachable by the host-running backend."""
+    if runtime_type != "docker":
+        return provisioned.broker_ref or ""
+
+    submitted = (
+        provisioned.detail.get("broker_submit_ref")
+        if isinstance(provisioned.detail, dict)
+        else None
+    )
+    if not isinstance(submitted, str) or not submitted.strip():
+        raise RunnerInfrastructureError(
+            "Docker broker provisioning did not provide a published host port"
+        )
+
+    parsed = urlsplit(submitted)
+    allowed_hosts = set(LOOPBACK_HOSTS) | {runner_submit_host()}
+    if (
+        parsed.scheme not in {"redis", "rediss"}
+        or parsed.hostname not in allowed_hosts
+        or parsed.port is None
+        or not 1 <= parsed.port <= 65535
+    ):
+        raise RunnerInfrastructureError(
+            f"invalid Docker broker submission URL: {submitted}"
+        )
+    return submitted
+
+
+def _discard_submission(**_kwargs: Any) -> None:
+    """Accept a submission that no real worker will consume."""
+
+
+def _submission_executor(
+    plan: EnvironmentPlan,
+    provisioned: ProvisionResult,
+    factory: Callable[[str], Any] | None,
+) -> Any:
+    """Build the controller that submits the task under test.
+
+    The simulated runtime provisions no broker and starts no worker process, so
+    its submissions are recorded for the run lifecycle but never delivered to a
+    real address.
+    """
+
+    if factory is not None:
+        return factory(
+            _backend_submission_broker_url(
+                provisioned, runtime_type=plan.runtime_type
+            )
+        )
+    if plan.runtime_type == "simulated":
+        return ExecutionController(broker_url="", send=_discard_submission)
+    return ExecutionController(
+        broker_url=_backend_submission_broker_url(
+            provisioned, runtime_type=plan.runtime_type
+        )
+    )
 
 
 def _now() -> datetime:
@@ -301,15 +367,8 @@ class TestOrchestrator:
 
             # ----------------------------------------------------------
             self._stage(run, "RUNNING")
-            broker_url = (
-                provisioned.detail.get("broker_submit_ref")
-                if provisioned.detail
-                else None
-            ) or provisioned.broker_ref or ""
-            self._executor = (
-                self.executor_factory(broker_url)
-                if self.executor_factory is not None
-                else ExecutionController(broker_url=broker_url)
+            self._executor = _submission_executor(
+                plan, provisioned, self.executor_factory
             )
             if run.trigger_type == "checkpoint":
                 checkpoint_coordination.register(

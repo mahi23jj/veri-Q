@@ -37,20 +37,20 @@ const WorkerDetailModal: React.FC<{ workerId: string; onClose: () => void }> = (
   const configured = data?.queues.filter((queue) => queue.is_configured) ?? [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#343832]/40 backdrop-blur-xs">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-[#FDFCFA] rounded-xl border border-[#E5E1D7] shadow-xl overflow-hidden flex flex-col">
-        <div className="px-5 py-3.5 border-b border-[#E5E1D7] bg-[#FAF8F3] flex items-start justify-between gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F0F6FC]/40 backdrop-blur-xs">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-[#000000] rounded-xl border border-[#30363D] shadow-xl overflow-hidden flex flex-col">
+        <div className="px-5 py-3.5 border-b border-[#30363D] bg-[#000000] flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="font-serif font-bold text-base text-[#343832] truncate">
+            <h2 className="font-serif font-bold text-base text-[#F0F6FC] truncate">
               {data?.worker_hostname || data?.hostname || 'Worker instance'}
             </h2>
-            <p className="text-[11px] text-[#777A72]">
+            <p className="text-[11px] text-[#B1BAC4]">
               Worker identity, heartbeat and queue inventory reported by the SDK
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-[#777A72] hover:text-[#343832] rounded-md hover:bg-[#EFEEE7]"
+            className="p-1.5 text-[#B1BAC4] hover:text-[#F0F6FC] rounded-md hover:bg-[#161B22]"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -73,19 +73,19 @@ const WorkerDetailModal: React.FC<{ workerId: string; onClose: () => void }> = (
                   ['Worker instance id', <span key="instance" className="font-mono break-all">{data.worker_instance_id}</span>],
                   ['Process identity', <span key="identity" className="font-mono break-all">{data.process_start_identity || '—'}</span>],
                 ].map(([label, value], index) => (
-                  <div key={index} className="p-2.5 bg-[#FAF8F3] border border-[#E5E1D7] rounded-lg min-w-0">
-                    <span className="text-[10px] text-[#777A72] block">{label}</span>
-                    <span className="text-[11.5px] text-[#343832] mt-0.5 block break-words">{value}</span>
+                  <div key={index} className="p-2.5 bg-[#000000] border border-[#30363D] rounded-lg min-w-0">
+                    <span className="text-[10px] text-[#B1BAC4] block">{label}</span>
+                    <span className="text-[11.5px] text-[#F0F6FC] mt-0.5 block break-words">{value}</span>
                   </div>
                 ))}
               </div>
 
               <div>
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#B1BAC4] mb-1.5">
                   Queues consumed ({consumed.length})
                 </h3>
                 {consumed.length === 0 ? (
-                  <p className="text-xs text-[#777A72] p-2.5 border border-dashed border-[#E5E1D7] rounded-lg">
+                  <p className="text-xs text-[#B1BAC4] p-2.5 border border-dashed border-[#30363D] rounded-lg">
                     No consumed queues reported. The SDK reports these from Celery's consumer state when
                     available.
                   </p>
@@ -101,22 +101,22 @@ const WorkerDetailModal: React.FC<{ workerId: string; onClose: () => void }> = (
               </div>
 
               <div>
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#B1BAC4] mb-1.5">
                   Queues configured ({configured.length})
                 </h3>
                 {configured.length === 0 ? (
-                  <p className="text-xs text-[#777A72] p-2.5 border border-dashed border-[#E5E1D7] rounded-lg">
+                  <p className="text-xs text-[#B1BAC4] p-2.5 border border-dashed border-[#30363D] rounded-lg">
                     No configured queues reported.
                   </p>
                 ) : (
-                  <div className="border border-[#E5E1D7] rounded-lg overflow-hidden divide-y divide-[#E5E1D7]">
+                  <div className="border border-[#30363D] rounded-lg overflow-hidden divide-y divide-[#30363D]">
                     {configured.map((queue) => (
-                      <div key={queue.id} className="flex items-center justify-between gap-2 px-3 py-2 bg-white">
+                      <div key={queue.id} className="flex items-center justify-between gap-2 px-3 py-2 bg-[#000000]">
                         <div className="min-w-0">
-                          <div className="text-[11.5px] font-mono text-[#343832] truncate">
+                          <div className="text-[11.5px] font-mono text-[#F0F6FC] truncate">
                             {queue.queue_name}
                           </div>
-                          <div className="text-[10px] text-[#777A72]">
+                          <div className="text-[10px] text-[#B1BAC4]">
                             exchange: {queue.exchange || '—'} · routing key: {queue.routing_key || '—'}
                           </div>
                         </div>
@@ -127,7 +127,7 @@ const WorkerDetailModal: React.FC<{ workerId: string; onClose: () => void }> = (
                     ))}
                   </div>
                 )}
-                <p className="text-[10px] text-[#777A72] mt-1.5 leading-relaxed">
+                <p className="text-[10px] text-[#B1BAC4] mt-1.5 leading-relaxed">
                   Configured queues come from <span className="font-mono">celery_app.amqp.queues</span>.
                   A worker may configure a queue without consuming it; consumed queues are reported
                   separately by the SDK.
@@ -135,17 +135,17 @@ const WorkerDetailModal: React.FC<{ workerId: string; onClose: () => void }> = (
               </div>
 
               <div>
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#777A72] mb-1.5">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[#B1BAC4] mb-1.5">
                   Registered tasks ({data.registered_task_names?.length ?? 0})
                 </h3>
                 {!data.registered_task_names || data.registered_task_names.length === 0 ? (
-                  <p className="text-xs text-[#777A72] p-2.5 border border-dashed border-[#E5E1D7] rounded-lg">
+                  <p className="text-xs text-[#B1BAC4] p-2.5 border border-dashed border-[#30363D] rounded-lg">
                     This worker did not report a task list.
                   </p>
                 ) : (
-                  <div className="max-h-48 overflow-y-auto border border-[#E5E1D7] rounded-lg divide-y divide-[#E5E1D7]">
+                  <div className="max-h-48 overflow-y-auto border border-[#30363D] rounded-lg divide-y divide-[#30363D]">
                     {data.registered_task_names.map((name) => (
-                      <div key={name} className="px-3 py-1.5 text-[11px] font-mono text-[#343832] bg-white">
+                      <div key={name} className="px-3 py-1.5 text-[11px] font-mono text-[#F0F6FC] bg-[#000000]">
                         {name}
                       </div>
                     ))}
@@ -195,18 +195,18 @@ export const Workers: React.FC = () => {
         <PageHeader
           title="Workers & Queues"
           description={`Worker instances discovered for ${application?.name ?? 'this application'}, with heartbeat status and queue inventory.`}
-          eyebrow={<span className="text-[11px] text-[#777A72] font-mono">GET /api/v1/workers</span>}
+          eyebrow={<span className="text-[11px] text-[#B1BAC4] font-mono">GET /api/v1/workers</span>}
           actions={
             <>
               <button
                 onClick={reload}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#52564e] bg-white border border-[#E5E1D7] rounded-lg hover:bg-[#EFEEE7] transition-colors"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-[#C9D1D9] bg-[#000000] border border-[#30363D] rounded-lg hover:bg-[#161B22] transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
               <Link
                 to="/integration"
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-[#879B83] hover:bg-[#788c74] rounded-lg transition-all"
+                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-black bg-[#FFFFFF] hover:bg-[#E5E7EB] rounded-lg transition-all"
               >
                 <Terminal className="w-3.5 h-3.5" /> Integration guide
               </Link>
@@ -214,7 +214,7 @@ export const Workers: React.FC = () => {
           }
         />
 
-        <div className="p-4 bg-[#8297AC]/8 border border-[#8297AC]/25 rounded-xl flex items-start gap-2.5 text-xs text-[#3b5168]">
+        <div className="p-4 bg-[#C9D1D9]/8 border border-[#C9D1D9]/25 rounded-xl flex items-start gap-2.5 text-xs text-[#C9D1D9]">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <p className="leading-relaxed">
             Worker rows are report-only. VeriQ does not provide restart, stop or kill controls, and this
@@ -228,10 +228,10 @@ export const Workers: React.FC = () => {
         <SectionCard
           title="Worker instances"
           description={data ? `${data.total} instance${data.total === 1 ? '' : 's'} discovered` : 'Loading…'}
-          icon={<Server className="w-4 h-4 text-[#8297AC]" />}
+          icon={<Server className="w-4 h-4 text-[#C9D1D9]" />}
           actions={
             <div className="flex items-center gap-2">
-              <label htmlFor="worker-status-filter" className="text-[11px] text-[#777A72]">
+              <label htmlFor="worker-status-filter" className="text-[11px] text-[#B1BAC4]">
                 Status
               </label>
               <select
@@ -241,7 +241,7 @@ export const Workers: React.FC = () => {
                   setStatusFilter(event.target.value);
                   setSkip(0);
                 }}
-                className="px-2.5 py-1.5 text-xs bg-white border border-[#E5E1D7] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#879B83]"
+                className="px-2.5 py-1.5 text-xs bg-[#000000] border border-[#30363D] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9D1D9]"
               >
                 <option value="ALL">All statuses</option>
                 <option value="ONLINE">Online</option>
@@ -263,7 +263,7 @@ export const Workers: React.FC = () => {
                 action={
                   <Link
                     to="/integration"
-                    className="text-xs font-medium text-[#5f745b] hover:text-[#343832]"
+                    className="text-xs font-medium text-[#C9D1D9] hover:text-[#F0F6FC]"
                   >
                     Read the integration guide
                   </Link>
@@ -274,7 +274,7 @@ export const Workers: React.FC = () => {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FAF8F3] text-[10px] uppercase tracking-wider text-[#777A72]">
+                  <thead className="bg-[#000000] text-[10px] uppercase tracking-wider text-[#B1BAC4]">
                     <tr>
                       <th className="px-5 py-2.5 font-semibold">Worker</th>
                       <th className="px-3 py-2.5 font-semibold">Status</th>
@@ -285,7 +285,7 @@ export const Workers: React.FC = () => {
                       <th className="px-3 py-2.5" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E5E1D7]">
+                  <tbody className="divide-y divide-[#30363D]">
                     {data.items.map((worker) => {
                       const consumed = worker.queues.filter((queue) => queue.is_consumed);
                       const configured = worker.queues.filter((queue) => queue.is_configured);
@@ -293,25 +293,25 @@ export const Workers: React.FC = () => {
                         <tr
                           key={worker.id}
                           onClick={() => setOpenWorkerId(worker.id)}
-                          className="hover:bg-[#FAF8F3] cursor-pointer transition-colors"
+                          className="hover:bg-[#000000] cursor-pointer transition-colors"
                         >
                           <td className="px-5 py-3 max-w-[240px]">
-                            <div className="text-xs font-medium text-[#343832] truncate">
+                            <div className="text-xs font-medium text-[#F0F6FC] truncate">
                               {worker.worker_hostname || worker.hostname || 'unknown host'}
                             </div>
-                            <div className="text-[10px] font-mono text-[#777A72] mt-0.5 truncate">
+                            <div className="text-[10px] font-mono text-[#B1BAC4] mt-0.5 truncate">
                               PID {worker.pid ?? '—'} · {worker.worker_instance_id.slice(0, 8)}
                             </div>
                           </td>
                           <td className="px-3 py-3">
                             <StatusBadge status={worker.status} />
                           </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#777A72]">
+                          <td className="px-3 py-3 whitespace-nowrap text-[11px] text-[#B1BAC4]">
                             {formatRelative(worker.last_seen_at)}
                           </td>
                           <td className="px-3 py-3">
                             {consumed.length === 0 ? (
-                              <span className="text-[#777A72]">—</span>
+                              <span className="text-[#B1BAC4]">—</span>
                             ) : (
                               <div className="flex flex-wrap gap-1 max-w-[180px]">
                                 {consumed.slice(0, 3).map((queue) => (
@@ -325,7 +325,7 @@ export const Workers: React.FC = () => {
                           </td>
                           <td className="px-3 py-3">
                             {configured.length === 0 ? (
-                              <span className="text-[#777A72]">—</span>
+                              <span className="text-[#B1BAC4]">—</span>
                             ) : (
                               <div className="flex flex-wrap gap-1 max-w-[180px]">
                                 {configured.slice(0, 3).map((queue) => (
@@ -337,11 +337,11 @@ export const Workers: React.FC = () => {
                               </div>
                             )}
                           </td>
-                          <td className="px-3 py-3 font-mono text-[#343832]">
+                          <td className="px-3 py-3 font-mono text-[#F0F6FC]">
                             {worker.registered_task_names?.length ?? 0}
                           </td>
                           <td className="px-3 py-3 text-right">
-                            <ChevronRight className="w-4 h-4 text-[#777A72] inline" />
+                            <ChevronRight className="w-4 h-4 text-[#B1BAC4] inline" />
                           </td>
                         </tr>
                       );

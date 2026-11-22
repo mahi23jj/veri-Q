@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -15,7 +16,13 @@ from app.models.runtime import (
     RunnerWorker,
 )
 from app.models.runtime import TestCaseRun as RunRow
+from app.runtime.contracts import ProvisionResult
 from app.runtime.finalizer import Finalizer
+from app.runtime.orchestrator import (
+    RunnerInfrastructureError,
+    _backend_submission_broker_url,
+    _submission_executor,
+)
 from app.runtime.simulated_backend import SimulatedRuntime
 from app.runtime.supervisor import RunnerSupervisor
 from app.services import runtime_service
@@ -28,6 +35,99 @@ from tests.runtime_helpers import (
     orchestrator,
     start_run,
 )
+
+
+def test_backend_uses_published_loopback_broker_url():
+    provisioned = ProvisionResult(
+        network_ref="veriq-test-net",
+        broker_ref="redis://veriq-test-broker:6379/0",
+        detail={"broker_submit_ref": "redis://127.0.0.1:45123/0"},
+    )
+
+    url = _backend_submission_broker_url(
+        provisioned,
+        runtime_type="docker",
+    )
+
+    assert url == "redis://127.0.0.1:45123/0"
+    assert "veriq-test-broker" not in url
+
+
+def test_backend_rejects_missing_published_broker_url():
+    provisioned = ProvisionResult(
+        network_ref="veriq-test-net",
+        broker_ref="redis://veriq-test-broker:6379/0",
+        detail={},
+    )
+
+    try:
+        _backend_submission_broker_url(
+            provisioned,
+            runtime_type="docker",
+        )
+    except RunnerInfrastructureError as exc:
+        assert "published host port" in str(exc)
+    else:
+        raise AssertionError("missing published broker URL should fail")
+
+
+def test_backend_rejects_internal_docker_broker_url():
+    provisioned = ProvisionResult(
+        network_ref="veriq-test-net",
+        broker_ref="redis://veriq-test-broker:6379/0",
+        detail={"broker_submit_ref": "redis://veriq-test-broker:6379/0"},
+    )
+
+    try:
+        _backend_submission_broker_url(
+            provisioned,
+            runtime_type="docker",
+        )
+    except RunnerInfrastructureError as exc:
+        assert "invalid Docker broker submission URL" in str(exc)
+    else:
+        raise AssertionError("Docker-internal broker URL should not be submitted by host")
+
+
+def test_backend_accepts_host_gateway_broker_url(monkeypatch):
+    import app.runtime.orchestrator as orchestrator_module
+
+    monkeypatch.setattr(
+        orchestrator_module, "runner_submit_host", lambda: "host.docker.internal"
+    )
+    provisioned = ProvisionResult(
+        network_ref="veriq-test-net",
+        broker_ref="redis://veriq-test-broker:6379/0",
+        detail={"broker_submit_ref": "redis://host.docker.internal:45123/0"},
+    )
+
+    url = _backend_submission_broker_url(
+        provisioned,
+        runtime_type="docker",
+    )
+
+    assert url == "redis://host.docker.internal:45123/0"
+
+
+def test_simulated_runtime_never_dials_a_broker():
+    plan = SimpleNamespace(runtime_type="simulated")
+    provisioned = ProvisionResult(
+        network_ref="veriq-simulated-net",
+        broker_ref="redis://veriq-00000000-broker:6379/0",
+        detail={"simulated": True},
+    )
+
+    executor = _submission_executor(plan, provisioned, None)
+    submission = executor.submit(
+        task_name="app.tasks.charge_order",
+        payload={"order_id": "order-1"},
+        queue="veriq.test",
+        operation_id=str(uuid.uuid4()),
+        logical_job_id=str(uuid.uuid4()),
+    )
+
+    assert submission.task_id
+    assert submission.queue == "veriq.test"
 
 
 def _recovering_behaviour(db: Session, client: TestClient, fixture: dict):

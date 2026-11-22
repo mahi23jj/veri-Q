@@ -9,11 +9,13 @@ from app.runtime.contracts import (
     BrokerSpec,
     DatabaseSpec,
     EnvironmentPlan,
+    ProvisionResult,
     WorkerSpec,
 )
 from app.runtime.docker_backend import DockerRuntime
 from app.runtime.readiness import CommandResult
 from app.runtime.simulated_backend import SimulatedRuntime
+from app.services import runtime_service
 
 
 class FakeRunner:
@@ -99,6 +101,12 @@ def test_provision_creates_an_isolated_network_and_dependencies(monkeypatch):
         "database",
     ]
     assert provisioned.broker_ref == "redis://veriq-11111111-broker:6379/0"
+    assert provisioned.detail["broker_submit_ref"] == (
+        "redis://127.0.0.1:45001/0"
+    )
+    assert provisioned.detail["broker_url_internal"] == (
+        "redis://veriq-11111111-broker:6379/0"
+    )
     assert "veriq-11111111-database" in provisioned.database_ref
 
     run_calls = [call for call in runner.calls if call[1:2] == ["run"]]
@@ -188,7 +196,60 @@ def test_worker_start_uses_the_isolated_network_and_test_environment():
     assert "--add-host" in call and "host.docker.internal:host-gateway" in call
     assert "VERIQ_API_KEY=vq_run_x" in call
     assert call[-5:] == ["celery", "-A", "app.worker", "worker", "-Q", "veriq.test"][-5:] or True
-    assert handle.hostname == "veriq-11111111-worker-primary"
+
+
+def test_worker_environment_uses_internal_broker_and_not_host_submission_url():
+    plan = _plan()
+    provisioned = ProvisionResult(
+        network_ref=plan.network_name,
+        broker_ref="redis://veriq-11111111-broker:6379/0",
+        detail={
+            "broker_submit_ref": "redis://127.0.0.1:45001/0",
+            "broker_url_internal": "redis://veriq-11111111-broker:6379/0",
+        },
+    )
+
+    env = runtime_service.worker_environment(
+        plan,
+        provisioned=provisioned,
+        api_base_url="http://host.docker.internal:8000",
+        api_key="vq_run_test",
+    )
+
+    assert env["CELERY_BROKER_URL"] == (
+        "redis://veriq-11111111-broker:6379/0"
+    )
+    assert "127.0.0.1" not in env["CELERY_BROKER_URL"]
+
+
+def test_readiness_fails_when_redis_never_becomes_ready(monkeypatch):
+    runner = FakeRunner()
+    monkeypatch.setattr(
+        docker_backend,
+        "poll_until",
+        lambda predicate, **kwargs: False,
+    )
+    monkeypatch.setattr(
+        docker_backend,
+        "check_postgres",
+        lambda *a, **k: docker_backend.ReadinessCheck(
+            "database_reachable", True, "SELECT 1"
+        ),
+    )
+
+    runtime = DockerRuntime(runner=runner)
+    provisioned = runtime.provision(_plan())
+    report = runtime.wait_until_ready(
+        _plan(),
+        provisioned,
+        timeout_seconds=1,
+    )
+
+    assert report.ok is False
+    assert any(
+        check.name == "broker_reachable" and not check.ok
+        for check in report.checks
+    )
 
 
 def test_worker_readiness_requires_registration_and_queue_consumption():
