@@ -11,7 +11,9 @@ from __future__ import annotations
 import os
 import sqlite3
 import time
+import json
 import urllib.request
+import urllib.error
 import uuid
 from datetime import datetime, timezone
 
@@ -25,12 +27,37 @@ TARGET_SQLITE_PATH = os.environ.get("TARGET_SQLITE_PATH", "/tmp/veriq-target.db"
 
 @celery_app.task(name="app.tasks.charge_order")
 def charge_order(order_id: str, amount_cents: int) -> dict:
-    """Successful task: pretends to charge an order."""
     if amount_cents <= 0:
         raise ValueError("amount_cents must be positive")
+
     checkpoint("order_validated")
+
+    payment_proxy = os.environ.get("TARGET_PAYMENT_URL")
+    payment_url = (
+        f"{payment_proxy.rstrip('/')}/charge"
+        if payment_proxy
+        else "http://mock-payment-service/charge"
+    )
+    request = urllib.request.Request(
+        payment_url,
+        data=json.dumps({
+            "order_id": order_id,
+            "amount_cents": amount_cents
+        }).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(
+            f"payment dependency returned HTTP {exc.code}"
+        ) from exc
+
     checkpoint("payment_charged")
-    return {"order_id": order_id, "amount_cents": amount_cents, "status": "charged"}
+
+    return payload
 
 
 @celery_app.task(name="app.tasks.checkpointed_payment")

@@ -551,6 +551,7 @@ def select_checkpoint_scenario(
         scenario,
         trigger_type="checkpoint",
         checkpoint=checkpoint,
+        scenario_config=selection.config,
     )
     return CheckpointScenarioItem(
         scenario_id=scenario.id,
@@ -620,7 +621,11 @@ def select_task_scenario(
         ) from exc
 
     result = compatibility_service.evaluate_task_scenario(
-        db, task, scenario, trigger_type="automatic"
+        db,
+        task,
+        scenario,
+        trigger_type="automatic",
+        scenario_config=selection.config,
     )
     return TaskScenarioItem(
         scenario_id=scenario.id,

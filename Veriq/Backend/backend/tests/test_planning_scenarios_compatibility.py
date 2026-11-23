@@ -225,6 +225,41 @@ def test_compatible_when_all_capabilities_present(client: TestClient):
     assert result["execution_available"] is True
 
 
+def test_charge_order_is_not_compatible_with_http_lost_response(client: TestClient):
+    app_id, key = register_app(client, "compat-charge-order")
+    task = discover_task(client, key, "app.tasks.charge_order")
+    configure_adapter(
+        client,
+        app_id,
+        name="http-sandbox",
+        adapter_type="http",
+        triggers=("timeout_simulation", "lost_response_simulation"),
+    )
+    create_contract(
+        client,
+        app_id,
+        task["id"],
+        contract_body(
+            include_measurement=False,
+            safe_input={"order_id": "order-1", "amount_cents": 500},
+        ),
+    )
+
+    result = _compat(
+        client,
+        app_id,
+        task_id=task["id"],
+        scenario_id="successful_operation_lost_response",
+        trigger_type="automatic",
+    )
+
+    assert result["status"] == "NEEDS_CONFIGURATION"
+    assert any(
+        reason["code"] == "HTTP_DEPENDENCY_URL_MISSING"
+        for reason in result["reasons"]
+    )
+
+
 def test_lost_response_requires_authoritative_measurement(client: TestClient):
     app_id, key = register_app(client, "compat-lost-response")
     task = discover_task(client, key, "app.tasks.process_document")
@@ -240,7 +275,11 @@ def test_lost_response_requires_authoritative_measurement(client: TestClient):
         client,
         app_id,
         task["id"],
-        contract_body(measurement_adapter_id=adapter["id"], authoritative=False),
+        contract_body(
+            measurement_adapter_id=adapter["id"],
+            authoritative=False,
+            safe_input={"url": "https://example.com/sandbox"},
+        ),
     )
 
     result = _compat(
@@ -265,7 +304,11 @@ def test_lost_response_requires_authoritative_measurement(client: TestClient):
     client.post(f"/api/v1/applications/{app_id}/adapters/{adapter['id']}/validate")
     updated = client.patch(
         f"/api/v1/applications/{app_id}/contracts/{contract['id']}",
-        json=contract_body(measurement_adapter_id=adapter["id"], authoritative=True),
+        json=contract_body(
+            measurement_adapter_id=adapter["id"],
+            authoritative=True,
+            safe_input={"url": "https://example.com/sandbox"},
+        ),
     )
     assert updated.status_code == 200, updated.text
     result = _compat(

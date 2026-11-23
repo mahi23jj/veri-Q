@@ -34,7 +34,11 @@ SIMULATED_PROFILE: dict[str, Any] = {
     "broker_image": "redis:7-alpine",
     "database_image": "postgres:16-alpine",
     "env": {"TARGET_SQLITE_PATH": "/tmp/veriq-target.db"},
-    "http": {"input_field": "url", "advertised_host": "127.0.0.1"},
+    "http": {
+        "input_field": "url",
+        "url_env": "TARGET_PAYMENT_URL",
+        "advertised_host": "127.0.0.1",
+    },
     "database": {"url_env": "TARGET_DATABASE_URL"},
 }
 

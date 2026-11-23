@@ -321,6 +321,39 @@ def _measurement_reasons(
     return reasons, refs
 
 
+def _is_absolute_http_url(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        from urllib.parse import urlsplit
+
+        parsed = urlsplit(value.strip())
+        return parsed.scheme in ("http", "https") and bool(parsed.hostname)
+    except (TypeError, ValueError):
+        return False
+
+
+def _contains_absolute_http_url(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(_contains_absolute_http_url(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_contains_absolute_http_url(child) for child in value)
+    return _is_absolute_http_url(value)
+
+
+def _http_dependency_present(
+    contract: ContractView | None,
+    scenario_config: Mapping[str, Any] | None,
+) -> bool:
+    if isinstance(scenario_config, Mapping):
+        dependency_url = scenario_config.get("dependency_url")
+        if _is_absolute_http_url(dependency_url):
+            return True
+    if contract is not None:
+        return _contains_absolute_http_url(contract.safe_input)
+    return False
+
+
 def evaluate(
     *,
     task: TaskView,
@@ -329,6 +362,7 @@ def evaluate(
     checkpoint: CheckpointView | None,
     contract: ContractView | None,
     adapters: Sequence[AdapterView],
+    scenario_config: Mapping[str, Any] | None = None,
 ) -> CompatibilityResult:
     """Evaluate one (task, scenario, trigger, checkpoint) combination.
 
@@ -520,6 +554,22 @@ def evaluate(
                             field="contract.cleanup.adapter_id",
                         )
                     )
+
+    if (
+        scenario.id == "successful_operation_lost_response"
+        and not _http_dependency_present(contract, scenario_config)
+    ):
+        reasons.append(
+            Reason(
+                code="HTTP_DEPENDENCY_URL_MISSING",
+                severity=SEVERITY_CONFIGURATION,
+                message=(
+                    "This HTTP scenario needs an absolute upstream dependency URL "
+                    "in scenario_config.dependency_url or contract.safe_input."
+                ),
+                field="scenario_config.dependency_url",
+            )
+        )
 
     # 5. Scenario-specific warnings.
     for warning in scenario.warnings:

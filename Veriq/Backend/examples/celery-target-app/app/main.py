@@ -35,6 +35,19 @@ def health() -> dict:
     }
 
 
+@app.post("/charge")
+def charge(request: dict) -> dict:
+    order_id = str(request.get("order_id") or "")
+    amount_cents = int(request.get("amount_cents") or 0)
+    if not order_id or amount_cents <= 0:
+        raise HTTPException(status_code=422, detail="invalid charge")
+    return {
+        "order_id": order_id,
+        "amount_cents": amount_cents,
+        "status": "charged",
+    }
+
+
 @app.get("/tasks")
 def list_tasks() -> dict:
     return {

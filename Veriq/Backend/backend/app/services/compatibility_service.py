@@ -7,7 +7,7 @@ only loads configuration and maps ORM rows to immutable views.
 from __future__ import annotations
 
 import uuid
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -111,6 +111,7 @@ def evaluate_task_scenario(
     checkpoint: TaskCheckpoint | None = None,
     contract: TaskTestContract | None = None,
     adapters: Sequence[AdapterView] | None = None,
+    scenario_config: Mapping[str, Any] | None = None,
 ) -> CompatibilityResult:
     """Evaluate one combination for a task already scoped to its application."""
     if contract is None:
@@ -124,6 +125,7 @@ def evaluate_task_scenario(
         checkpoint=checkpoint_view(checkpoint),
         contract=contract_view(contract),
         adapters=adapters,
+        scenario_config=scenario_config,
     )
 
 
@@ -151,6 +153,7 @@ def evaluate_selections(
             trigger_type=selection.trigger_type,
             checkpoint=checkpoint,
             adapters=adapters,
+            scenario_config=getattr(selection, "config", None),
         )
         payload = result.to_dict()
         payload.update(
@@ -187,6 +190,7 @@ def task_overview(db: Session, task: RegisteredTask) -> tuple[list[dict], list[d
     for scenario in list_scenarios():
         if not scenario.supports_automatic:
             continue
+        stored = selections.get(scenario.id)
         result = evaluate_task_scenario(
             db,
             task,
@@ -194,8 +198,8 @@ def task_overview(db: Session, task: RegisteredTask) -> tuple[list[dict], list[d
             trigger_type="automatic",
             contract=contract,
             adapters=adapters,
+            scenario_config=stored.config if stored is not None else None,
         )
-        stored = selections.get(scenario.id)
         selected_by_default = result.compatible
         automatic.append(
             {
@@ -224,6 +228,7 @@ def task_overview(db: Session, task: RegisteredTask) -> tuple[list[dict], list[d
         for scenario in list_scenarios():
             if not scenario.supports_checkpoint:
                 continue
+            stored = selections_by_scenario.get(scenario.id)
             result = evaluate_task_scenario(
                 db,
                 task,
@@ -232,8 +237,8 @@ def task_overview(db: Session, task: RegisteredTask) -> tuple[list[dict], list[d
                 checkpoint=checkpoint,
                 contract=contract,
                 adapters=adapters,
+                scenario_config=stored.config if stored is not None else None,
             )
-            stored = selections_by_scenario.get(scenario.id)
             items.append(
                 {
                     "scenario_id": scenario.id,

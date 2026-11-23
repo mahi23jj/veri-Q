@@ -273,6 +273,13 @@ class TestOrchestrator:
             # ----------------------------------------------------------
             self._stage(run, "PREPARING_FAULT")
             prepared_detail: dict[str, Any] = {}
+            dependency_url = runtime_service.dependency_upstream(
+                run.configuration, profile
+            )
+            if provisioned.detail.get("http_upstream_url_submit"):
+                dependency_url = str(
+                    provisioned.detail["http_upstream_url_submit"]
+                )
             context = FaultContext(
                 test_run_id=str(run.id),
                 scenario_id=run.scenario_id,
@@ -281,9 +288,7 @@ class TestOrchestrator:
                 checkpoint_name=run.checkpoint_name,
                 operation_id=str(run.id),
                 queue_name=plan.worker.queue_name,
-                dependency_url=runtime_service.dependency_upstream(
-                    run.configuration, profile
-                ),
+                dependency_url=dependency_url,
                 database_upstream=(
                     _database_upstream(provisioned)
                     if run.scenario_id in _DATABASE_PROXY_SCENARIOS

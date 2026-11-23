@@ -24,6 +24,8 @@ from __future__ import annotations
 import json
 import re
 import time
+import urllib.request
+import urllib.error
 from dataclasses import dataclass
 from typing import Any, Sequence
 
@@ -214,6 +216,39 @@ class DockerRuntime:
                     "password": plan.database.password,
                     "database": plan.database.database,
                 }
+            http_profile = (
+                plan.runtime_config.get("http")
+                if isinstance(plan.runtime_config, dict)
+                else None
+            )
+            if isinstance(http_profile, dict):
+                upstream_url = str(http_profile.get("upstream_url") or "")
+                needs_mock_upstream = "mock-payment-service" in upstream_url
+                if needs_mock_upstream:
+                    host_port = reserve_local_port()
+                    payment_name = f"{plan.namespace}-payment"
+                    container = self._start_container(
+                        plan,
+                        role="http_upstream",
+                        name=payment_name,
+                        image=plan.worker.image,
+                        command=("uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"),
+                        env={},
+                        publish={8000: host_port},
+                    )
+                    containers.append(
+                        _Container("http_upstream", payment_name, container, host_port)
+                    )
+                    detail["http_upstream_url_submit"] = (
+                        f"http://{submit_host}:{host_port}"
+                    )
+                    detail["http_upstream_url_internal"] = (
+                        f"http://{payment_name}:8000"
+                    )
+                    detail["http_readiness"] = {
+                        "host": submit_host,
+                        "port": host_port,
+                    }
         except Exception:
             # Never leave half a run's infrastructure behind.
             self._remove_network(network)
@@ -350,6 +385,34 @@ class DockerRuntime:
                 name="database_reachable",
                 ok=False,
                 detail="database was not provisioned",
+            )
+
+        http_target = provisioned.detail.get("http_readiness")
+        if http_target:
+            def http_ok() -> bool:
+                url = (
+                    f"http://{http_target['host']}:{http_target['port']}/health"
+                )
+                try:
+                    with urllib.request.urlopen(url, timeout=1) as response:
+                        return response.status == 200
+                except (urllib.error.URLError, TimeoutError, OSError):
+                    return False
+
+            http_ready = poll_until(
+                http_ok,
+                timeout_seconds=timeout_seconds,
+                interval_seconds=self._poll_interval,
+            )
+            checks["http_upstream_reachable"] = ReadinessCheck(
+                name="http_upstream_reachable",
+                ok=http_ready,
+                detail=(
+                    f"http upstream reached at "
+                    f"{http_target['host']}:{http_target['port']}"
+                    if http_ready
+                    else "HTTP mock upstream did not become ready"
+                ),
             )
 
         checks["network_isolated"] = ReadinessCheck(

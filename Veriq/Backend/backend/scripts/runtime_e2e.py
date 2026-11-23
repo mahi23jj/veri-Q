@@ -177,6 +177,11 @@ def main() -> int:
         "concurrency": 1,
         "broker_image": "redis:7-alpine",
         "database_image": "postgres:16-alpine",
+        "http": {
+            "url_env": "TARGET_PAYMENT_URL",
+            "upstream_url": "http://mock-payment-service",
+            "advertised_host": "127.0.0.1",
+        },
         "env": {
             "CELERY_TASK_ACKS_LATE": "true",
             "CELERY_TASK_REJECT_ON_WORKER_LOST": "true",

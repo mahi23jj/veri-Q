@@ -120,6 +120,44 @@ def test_provision_creates_an_isolated_network_and_dependencies(monkeypatch):
     assert published and all(entry.startswith("127.0.0.1:") for entry in published)
 
 
+def test_docker_http_profile_provisions_a_mock_payment_upstream(monkeypatch):
+    runner = FakeRunner()
+    ports = iter((45001, 45002, 45003))
+    monkeypatch.setattr(docker_backend, "reserve_local_port", lambda: next(ports))
+    runtime = DockerRuntime(runner=runner)
+    plan = _plan(
+        runtime_config={
+            "http": {
+                "url_env": "TARGET_PAYMENT_URL",
+                "upstream_url": "http://mock-payment-service",
+                "advertised_host": "127.0.0.1",
+            }
+        }
+    )
+
+    provisioned = runtime.provision(plan)
+
+    assert [container["role"] for container in provisioned.containers] == [
+        "broker",
+        "database",
+        "http_upstream",
+    ]
+    assert provisioned.detail["http_upstream_url_submit"] == (
+        "http://127.0.0.1:45003"
+    )
+    assert provisioned.detail["http_upstream_url_internal"].endswith(
+        "-payment:8000"
+    )
+    payment_run = next(
+        call
+        for call in runner.calls
+        if "veriq-11111111-payment" in call
+    )
+    assert "uvicorn" in payment_run
+    assert "app.main:app" in payment_run
+    assert "127.0.0.1:45003:8000" in payment_run
+
+
 def test_provision_fails_when_the_application_image_is_missing():
     class MissingImage(FakeRunner):
         def run(self, args, *, timeout: float = 60.0):
